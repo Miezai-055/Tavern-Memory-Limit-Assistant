@@ -39,75 +39,149 @@
 
 ## 安装
 
-> **为什么不能像「酒馆助手」那样一个 URL 装完？**
->
-> 酒馆助手（JS-Slash-Runner）是**纯前端**扩展，酒馆的「Install extension」把它克隆到
-> `third-party/` 就够了。本扩展还带一个**服务端插件**，而酒馆官方**没有为 `plugins/` 目录提供
-> 任何 URL 安装入口** —— 已在 SillyTavern 1.18.0 源码中确认：`src/endpoints/` 下只有
-> `extensions.js`（克隆到 `third-party/`），没有对应的 `plugins.js`。
->
-> 所以安装分两步：**前端一个 URL，服务端一条命令**。两端装好后都能被酒馆自动更新
-> （前端靠 `manifest.json` 的 `auto_update`，服务端靠 `enableServerPluginsAutoUpdate`）。
+本扩展由**两部分**组成，两部分都要装，缺一不可：
 
-### 前提
+| 部分 | 必须安装到 | 包含的文件 |
+| --- | --- | --- |
+| 前端扩展 | `<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/` | `manifest.json`、`index.js`、`style.css` |
+| 服务端插件 | `<酒馆根目录>/plugins/chat-memory-window/` | `index.mjs`、`package.json`、`version.json` |
 
-- SillyTavern `1.11.1` 或更高（服务端插件 API 自该版本引入）
-- `config.yaml` 中需要：
+> 下文的 **酒馆根目录**，指的是里面有 `server.js`、`config.yaml`、`public/`、`plugins/` 的那个目录。
+> 例如 Windows 上的 `D:\SillyTavern`，Termux 上的 `~/SillyTavern`。
+
+安装一共四步：改开关 → 装前端 → 装服务端 → 重启。全程只需要做一次。
+
+---
+
+### 第一步：打开服务端插件开关
+
+用文本编辑器打开酒馆根目录下的 `config.yaml`，找到这一行：
+
+```yaml
+enableServerPlugins: false
+```
+
+改成：
 
 ```yaml
 enableServerPlugins: true
 ```
 
-### 第一步：安装前端扩展（Git URL）
+如果文件里**根本没有** `enableServerPlugins` 这一行，就在任意一个顶层位置（行首不缩进）自己加上：
 
-酒馆 → **Extensions** → **Install extension** → 粘贴：
+```yaml
+enableServerPlugins: true
+```
+
+> 这一步不做，服务端插件不会被加载，扩展启用后只会提示「未找到服务端插件」，不会生效。
+
+---
+
+### 第二步：安装前端扩展
+
+打开酒馆网页界面 → 顶部 **Extensions（扩展）** 面板 → 找到 **Install extension** 输入框 → 粘贴下面的地址 → 确认安装：
 
 ```text
 https://github.com/liuyuanjianlyj-crypto/chat-memory-window
 ```
 
-安装后扩展会出现在扩展列表里，显示名为「聊天内存限制助手」。
+装好后扩展列表里会出现「聊天内存限制助手」。
 
-### 第二步：安装服务端插件
+<details>
+<summary>界面装不了时的手动安装方式</summary>
 
-前端扩展已刷新酒馆界面，但服务端插件需要放到酒馆根目录的 `plugins/` 下。
-
-如果前端扩展已经从上面的 URL 装好了，**最省事的一条命令**是把它复制过去（无需重新下载）：
+在酒馆根目录执行：
 
 ```bash
-# Linux / macOS / Android Termux，在酒馆根目录执行
+git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git public/scripts/extensions/third-party/chat-memory-window
+```
+
+装完确认文件存在：
+
+```text
+<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/manifest.json
+```
+
+</details>
+
+---
+
+### 第三步：安装服务端插件
+
+服务端插件必须放在 `<酒馆根目录>/plugins/` 下面。下面三种方式**任选一种**即可。
+
+#### 方式 A：用仓库自带的安装脚本（最省事）
+
+仓库里带了两个安装脚本，会**自动找到酒馆目录、克隆插件、并检查 `enableServerPlugins` 有没有打开**。
+它们就放在第二步装好的前端扩展目录里：
+
+```text
+<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/install-plugin.ps1   （Windows）
+<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/install-plugin.sh    （Linux / macOS / Termux）
+```
+
+**Windows（PowerShell）：**
+
+```powershell
+cd "<酒馆根目录>\public\scripts\extensions\third-party\chat-memory-window"
+powershell -ExecutionPolicy Bypass -File install-plugin.ps1 -SillyTavern "<酒馆根目录>"
+```
+
+**Linux / macOS / Android Termux：**
+
+```bash
+cd "<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window"
+bash install-plugin.sh "<酒馆根目录>"
+```
+
+> 末尾的路径参数可以省略，脚本会在常见位置（含 Termux 的 `~/SillyTavern`）自动探测酒馆根目录。
+
+#### 方式 B：手动克隆一份
+
+在酒馆根目录执行（Windows 的 CMD / PowerShell、Linux、macOS、Termux 通用）：
+
+```bash
+cd <酒馆根目录>
+git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window
+```
+
+这种方式装出来的插件是独立的 git 仓库，酒馆启动时会自动 `git pull` 更新它。
+
+#### 方式 C：从刚装好的前端扩展复制
+
+如果第二步已经装好了前端扩展，直接复制那份过去即可，不需要重新下载：
+
+```bash
+cd <酒馆根目录>
 cp -r public/scripts/extensions/third-party/chat-memory-window plugins/chat-memory-window
 ```
 
-也可以重新克隆一份，这样以后能跟着 `git pull` 自动更新：
+> Windows 上如果没有 `cp`，用 CMD 的 `xcopy /E /I public\scripts\extensions\third-party\chat-memory-window plugins\chat-memory-window`，
+> 或者直接在文件管理器里把整个 `chat-memory-window` 文件夹复制到 `plugins\` 下。
 
-**Windows（PowerShell / CMD，在酒馆根目录执行）：**
+#### 装完确认
 
-```powershell
-git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window
+不管用哪种方式，最终都应该存在这个文件：
+
+```text
+<酒馆根目录>/plugins/chat-memory-window/index.mjs
 ```
 
-**Linux / macOS / Android Termux（在酒馆根目录执行）：**
+---
 
-```bash
-git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window
+### 第四步：完全重启酒馆
+
+服务端插件**只在酒馆启动时加载**，所以必须把酒馆**完整关闭再重新启动**（关掉进程，不是刷新页面）。
+
+重启后，在浏览器按 `Ctrl + Shift + R` 强制刷新一次，清掉旧的前端缓存。
+
+启动日志里出现下面这一行，就说明服务端插件已经加载成功：
+
+```text
+[chat-memory-window] Server plugin 1.3.0 loaded.
 ```
 
-也可以直接运行本仓库附带的安装脚本，它会自动定位酒馆目录并把插件放好：
-
-```bash
-bash install-plugin.sh /path/to/SillyTavern
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-plugin.ps1 -SillyTavern "D:\path\to\SillyTavern"
-```
-
-> 路径参数可省略：脚本会在常见位置（含 Termux 的 `~/SillyTavern`）自动探测酒馆根目录。
-
-### 第三步：重启酒馆
-
-服务端插件**只在启动时加载**。安装或更新后必须完全重启酒馆，然后浏览器按 `Ctrl + Shift + R` 强制刷新。
+如果没有这一行，按顺序检查：`config.yaml` 里的 `enableServerPlugins` 是不是 `true`、`plugins/chat-memory-window/index.mjs` 是否存在、酒馆是不是真的完整重启了。
 
 ---
 
@@ -134,28 +208,26 @@ powershell -ExecutionPolicy Bypass -File install-plugin.ps1 -SillyTavern "D:\pat
 
 ## 手机端（Android / Termux）
 
-手机端酒馆只要满足**前提条件**（完整 Node.js 后端 + 可安装服务端插件），本扩展同样可用，步骤与桌面一致：
+手机端酒馆只要满足**前提条件**（完整 Node.js 后端 + 可写 `plugins/`），安装步骤和上面的四步完全一样，只是命令换成手机上的路径：
 
 ```bash
-# 1. 开启服务端插件
-nano ~/SillyTavern/config.yaml     # 把 enableServerPlugins 改为 true
+# 第一步：打开服务端插件开关
+nano ~/SillyTavern/config.yaml     # 把 enableServerPlugins 改成 true
 
-# 2. 安装服务端插件
+# 第二步：安装前端扩展（在酒馆界面 Extensions → Install extension 里粘贴仓库地址）
+
+# 第三步：安装服务端插件
 cd ~/SillyTavern
 git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window
 
-# 3. 完全重启酒馆
+# 第四步：完全重启酒馆
 ```
 
-前端扩展走酒馆界面的 **Install extension**，或直接放进
-`~/SillyTavern/public/scripts/extensions/third-party/chat-memory-window/`。
-
-需要注意：
+注意：
 
 - 如果手机端酒馆**只提供浏览器前端、后端跑在别处**，那么服务端插件要装在后端那台机器上；
-- 某些手机端打包版本可能未启用服务端插件，或 `plugins/` 目录不可写 —— 这种情况只能使用前端部分，
-  内存窗口不会生效（此时扩展会明确提示「未找到服务端插件」，不会破坏任何数据）；
-- 手机端浏览器同样支持本扩展依赖的 `fetch` 劫持与 `Request`/`Response` 重建，无需特殊处理。
+- 某些手机端打包版本可能没打开服务端插件开关，或 `plugins/` 目录不可写 —— 这种情况只能装前端部分，
+  内存窗口不会生效（此时扩展会明确提示「未找到服务端插件」，不会破坏任何数据）。
 
 ### 手机端可用性检查清单
 
@@ -220,7 +292,7 @@ ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
 | `install-plugin.ps1` | `$RepoUrl` 默认值（可用环境变量 `CMW_REPO_URL` 覆盖） |
 | `README.md` | 安装章节里的示例 URL |
 
-推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第二步处理。
+推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第三步处理。
 
 > 仓库名会影响克隆后的文件夹名。本仓库按 `chat-memory-window` 命名，
 > 与 `index.js` 里的 `EXTENSION_NAME`、`SERVER_PREFIX` 和服务端 `plugin id` 保持一致。
