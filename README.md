@@ -208,9 +208,28 @@ ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
 
 ---
 
-## 目录结构
+## 发布到 GitHub（维护者）
 
-目录结构：
+如果你 fork 或改名了仓库，需要同步替换这几处 URL：
+
+| 文件 | 位置 |
+| --- | --- |
+| `manifest.json` | `homePage` |
+| `index.js` | `SERVER_INSTALL_COMMAND`（面板里展示给用户的命令） |
+| `install-plugin.sh` | `REPO_URL` 默认值（可用环境变量 `CMW_REPO_URL` 覆盖） |
+| `install-plugin.ps1` | `$RepoUrl` 默认值（可用环境变量 `CMW_REPO_URL` 覆盖） |
+| `README.md` | 安装章节里的示例 URL |
+
+推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第二步处理。
+
+> 仓库名会影响克隆后的文件夹名。本仓库按 `chat-memory-window` 命名，
+> 与 `index.js` 里的 `EXTENSION_NAME`、`SERVER_PREFIX` 和服务端 `plugin id` 保持一致。
+> 如果改了仓库名，扩展本身仍能工作（前端靠 manifest，服务端靠 package.json 的 `main`），
+> 但建议同时统一 `SERVER_PREFIX` 与服务端 `info.id`，否则前后端桥接会找不到对方。
+
+---
+
+## 目录结构
 
 ```text
 chat-memory-window/

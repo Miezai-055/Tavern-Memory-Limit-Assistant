@@ -3,6 +3,10 @@ import { extension_settings, getContext } from '../../../extensions.js';
 
 const EXTENSION_NAME = 'chat-memory-window';
 const SERVER_PREFIX = '/api/plugins/chat-memory-window';
+// The server half has to live in <SillyTavern>/plugins/. SillyTavern exposes no
+// URL-based installer for plugins/ (only for third-party extensions), so when
+// the bridge is missing the panel shows this exact command to copy and run.
+const SERVER_INSTALL_COMMAND = 'git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window';
 const DEFAULT_SETTINGS = Object.freeze({
     enabled: false,
     limit: 20,
@@ -605,26 +609,33 @@ function updateStatus() {
     const currentSettings = getSettings();
     const status = document.querySelector('#chat-memory-window-status');
     const reloadButton = document.querySelector('#chat-memory-window-reload');
+    const serverHint = document.querySelector('#chat-memory-window-server-hint');
     if (!status) return;
 
     const activeChat = hasActiveChat();
     if (reloadButton) reloadButton.disabled = !activeChat;
 
     if (!currentSettings.enabled) {
+        if (serverHint) serverHint.hidden = true;
         status.textContent = '状态：已关闭（酒馆将使用完整聊天记录）';
         return;
     }
 
     if (!activeChat) {
+        if (serverHint) serverHint.hidden = true;
         status.textContent = '状态：已启用，等待进入聊天；未进入聊天时不会执行重载或拦截。';
         return;
     }
 
     if (!state.serverAvailable) {
+        // The panel is the first place a new user looks, so surface the exact
+        // command that installs the missing server half.
+        if (serverHint) serverHint.hidden = false;
         status.textContent = `状态：服务端窗口桥接未就绪。${state.lastError || '请确认已重启酒馆。'}`;
         return;
     }
 
+    if (serverHint) serverHint.hidden = true;
     const end = state.total > 0 ? state.start + state.loaded - 1 : state.start;
     status.textContent = `状态：已启用；磁盘总消息 ${state.total}，浏览器窗口 ${state.loaded} 条（索引 ${state.start}-${Math.max(state.start, end)}）`;
 }
@@ -683,6 +694,13 @@ function createUI() {
                     <button id="chat-memory-window-reload" class="menu_button cmw-button" type="button">重新加载当前聊天</button>
                 </div>
                 <div id="chat-memory-window-status" class="cmw-status"></div>
+                <div id="chat-memory-window-server-hint" class="cmw-server-hint" hidden>
+                    <div>本扩展分两部分：前端（已装好）和服务端插件。请在酒馆根目录执行下面这条命令，然后<strong>完全重启酒馆</strong>：</div>
+                    <code id="chat-memory-window-server-cmd" class="cmw-server-cmd"></code>
+                    <div class="cmw-server-hint-actions">
+                        <button id="chat-memory-window-copy-cmd" class="menu_button cmw-button" type="button">复制命令</button>
+                    </div>
+                </div>
                 <div class="cmw-warning">完整历史仍保存在磁盘。窗口外只保留轻量楼层占位，因此楼层号继续正常增长；旧消息正文、变量和数据库快照不会进入浏览器内存。未进入聊天时启用不会执行重载。</div>
             </div>
         </details>
@@ -693,6 +711,34 @@ function createUI() {
     const limit = wrapper.querySelector('#chat-memory-window-limit');
     const reload = wrapper.querySelector('#chat-memory-window-reload');
     const panel = wrapper.querySelector('#chat-memory-window-panel');
+    const serverCmd = wrapper.querySelector('#chat-memory-window-server-cmd');
+    const copyCmd = wrapper.querySelector('#chat-memory-window-copy-cmd');
+
+    if (serverCmd) serverCmd.textContent = SERVER_INSTALL_COMMAND;
+
+    copyCmd?.addEventListener('click', async () => {
+        const command = SERVER_INSTALL_COMMAND;
+        try {
+            if (globalThis.navigator?.clipboard?.writeText) {
+                await globalThis.navigator.clipboard.writeText(command);
+            } else {
+                throw new Error('clipboard unavailable');
+            }
+            globalThis.toastr?.success?.('安装命令已复制');
+        } catch {
+            // Clipboard API needs a secure context; fall back to a selectable field.
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(serverCmd);
+                const selection = globalThis.getSelection?.();
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+                globalThis.toastr?.info?.('请手动复制已选中的命令');
+            } catch {
+                globalThis.toastr?.info?.(command);
+            }
+        }
+    });
 
     enabled.checked = Boolean(currentSettings.enabled);
     limit.value = String(currentSettings.limit);
