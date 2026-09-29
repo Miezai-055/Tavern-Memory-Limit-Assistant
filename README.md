@@ -39,6 +39,16 @@
 
 ## 安装
 
+> **为什么不能像「酒馆助手」那样一个 URL 装完？**
+>
+> 酒馆助手（JS-Slash-Runner）是**纯前端**扩展，酒馆的「Install extension」把它克隆到
+> `third-party/` 就够了。本扩展还带一个**服务端插件**，而酒馆官方**没有为 `plugins/` 目录提供
+> 任何 URL 安装入口** —— 已在 SillyTavern 1.18.0 源码中确认：`src/endpoints/` 下只有
+> `extensions.js`（克隆到 `third-party/`），没有对应的 `plugins.js`。
+>
+> 所以安装分两步：**前端一个 URL，服务端一条命令**。两端装好后都能被酒馆自动更新
+> （前端靠 `manifest.json` 的 `auto_update`，服务端靠 `enableServerPluginsAutoUpdate`）。
+
 ### 前提
 
 - SillyTavern `1.11.1` 或更高（服务端插件 API 自该版本引入）
@@ -61,6 +71,15 @@ https://github.com/liuyuanjianlyj-crypto/chat-memory-window
 ### 第二步：安装服务端插件
 
 前端扩展已刷新酒馆界面，但服务端插件需要放到酒馆根目录的 `plugins/` 下。
+
+如果前端扩展已经从上面的 URL 装好了，**最省事的一条命令**是把它复制过去（无需重新下载）：
+
+```bash
+# Linux / macOS / Android Termux，在酒馆根目录执行
+cp -r public/scripts/extensions/third-party/chat-memory-window plugins/chat-memory-window
+```
+
+也可以重新克隆一份，这样以后能跟着 `git pull` 自动更新：
 
 **Windows（PowerShell / CMD，在酒馆根目录执行）：**
 
