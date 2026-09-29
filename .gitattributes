@@ -1,6 +1,5 @@
 # Shell scripts must keep LF so they run on Linux/macOS/Termux.
 *.sh text eol=lf
-install-plugin.sh text eol=lf
 
 # Source, docs and data stay LF.
 *.js   text eol=lf

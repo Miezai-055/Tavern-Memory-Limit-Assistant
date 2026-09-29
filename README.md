@@ -41,7 +41,7 @@
 
 ### 前提
 
-- SillyTavern `1.12.0` 或更高（需要服务端插件支持）
+- SillyTavern `1.11.1` 或更高（服务端插件 API 自该版本引入）
 - `config.yaml` 中需要：
 
 ```yaml
@@ -137,6 +137,33 @@ git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugin
 - 某些手机端打包版本可能未启用服务端插件，或 `plugins/` 目录不可写 —— 这种情况只能使用前端部分，
   内存窗口不会生效（此时扩展会明确提示「未找到服务端插件」，不会破坏任何数据）；
 - 手机端浏览器同样支持本扩展依赖的 `fetch` 劫持与 `Request`/`Response` 重建，无需特殊处理。
+
+### 手机端可用性检查清单
+
+装完后按顺序确认这几点，任一条不满足就说明手机端环境不支持服务端插件：
+
+```bash
+# a. 后端必须是完整 Node.js 运行环境（不是纯浏览器壳）
+cd ~/SillyTavern && node -v          # 应输出 v18 或更高
+
+# b. 服务端插件开关必须打开
+grep -n 'enableServerPlugins' ~/SillyTavern/config.yaml   # 应为 true
+
+# c. 插件文件确实就位
+ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
+
+# d. 完全重启后，日志里应出现这一行
+#    [chat-memory-window] Server plugin 1.3.0 loaded.
+```
+
+浏览器端（手机浏览器打开酒馆）确认：
+
+1. 扩展列表里能看到「聊天内存限制助手」；
+2. 展开面板后状态栏不显示「未找到服务端插件」；
+3. 启用 + 点击「重新加载当前聊天」后，状态栏显示 `磁盘总消息 N，浏览器窗口 M 条`。
+
+> 移动端说明：本扩展依赖的都是跨平台能力（`fetch` 劫持、`Request`/`Response` 重建、Node 标准库流式读文件），
+> 没有任何桌面专属依赖；服务端用到的两个 npm 包是纯 JavaScript，不含原生模块，因此在 ARM64 / Android 上无需编译工具链。
 
 ---
 
