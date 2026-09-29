@@ -74,6 +74,8 @@ enableServerPlugins: true
 ```
 
 > 这一步不做，服务端插件不会被加载，扩展启用后只会提示「未找到服务端插件」，不会生效。
+>
+> 如果用第三步的**安装脚本**，脚本会自动帮你改好这一行（原文件会备份成 `config.yaml.bak-chat-memory-window`），可以跳过本步。
 
 ---
 
@@ -108,60 +110,53 @@ git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git public
 
 ### 第三步：安装服务端插件
 
-服务端插件必须放在 `<酒馆根目录>/plugins/` 下面。下面三种方式**任选一种**即可。
+打开酒馆的**扩展面板**，如果看到「还差最后一步：安装服务端插件」，说明服务端插件还没装。
 
-#### 方式 A：用仓库自带的安装脚本（最省事）
+**方法一（推荐）：点面板上的「一键复制安装命令」按钮**，然后：
 
-仓库里带了两个安装脚本，会**自动找到酒馆目录、克隆插件、并检查 `enableServerPlugins` 有没有打开**。
-它们就放在第二步装好的前端扩展目录里：
+1. 打开酒馆根目录的终端（Windows 用 PowerShell 或 CMD，手机用 Termux）
+2. 粘贴并回车
 
-```text
-<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/install-plugin.ps1   （Windows）
-<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window/install-plugin.sh    （Linux / macOS / Termux）
-```
-
-**Windows（PowerShell）：**
-
-```powershell
-cd "<酒馆根目录>\public\scripts\extensions\third-party\chat-memory-window"
-powershell -ExecutionPolicy Bypass -File install-plugin.ps1 -SillyTavern "<酒馆根目录>"
-```
-
-**Linux / macOS / Android Termux：**
+命令本身是这一条（`plugins.js` 是酒馆自带的官方插件安装工具）：
 
 ```bash
-cd "<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window"
+node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git
+```
+
+**方法二：复制文件夹**（完全不用命令行）
+
+把 `<酒馆根目录>/public/scripts/extensions/third-party/chat-memory-window` 整个文件夹，
+复制到 `<酒馆根目录>/plugins/` 下即可。
+
+<details>
+<summary>其他安装方式（安装脚本 / git clone）</summary>
+
+**安装脚本** —— 脚本就在前端扩展目录里，它会**把本地的前端扩展复制到 `plugins/`**（不需要联网），
+并**自动打开 `enableServerPlugins`**：
+
+```bash
+# Linux / macOS / Android Termux
 bash install-plugin.sh "<酒馆根目录>"
 ```
 
-> 末尾的路径参数可以省略，脚本会在常见位置（含 Termux 的 `~/SillyTavern`）自动探测酒馆根目录。
+```powershell
+# Windows，也可以直接双击同目录的 install-plugin.bat
+powershell -ExecutionPolicy Bypass -File install-plugin.ps1 -SillyTavern "<酒馆根目录>"
+```
 
-#### 方式 B：手动克隆一份
+酒馆根目录可以省略不写，脚本会自己探测。
 
-在酒馆根目录执行（Windows 的 CMD / PowerShell、Linux、macOS、Termux 通用）：
+**git clone** —— 在酒馆根目录执行：
 
 ```bash
-cd <酒馆根目录>
 git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window
 ```
 
-这种方式装出来的插件是独立的 git 仓库，酒馆启动时会自动 `git pull` 更新它。
+这样装出来的是独立 git 仓库，酒馆启动时会自动 `git pull` 更新它。
 
-#### 方式 C：从刚装好的前端扩展复制
+</details>
 
-如果第二步已经装好了前端扩展，直接复制那份过去即可，不需要重新下载：
-
-```bash
-cd <酒馆根目录>
-cp -r public/scripts/extensions/third-party/chat-memory-window plugins/chat-memory-window
-```
-
-> Windows 上如果没有 `cp`，用 CMD 的 `xcopy /E /I public\scripts\extensions\third-party\chat-memory-window plugins\chat-memory-window`，
-> 或者直接在文件管理器里把整个 `chat-memory-window` 文件夹复制到 `plugins\` 下。
-
-#### 装完确认
-
-不管用哪种方式，最终都应该存在这个文件：
+装完确认存在这个文件：
 
 ```text
 <酒馆根目录>/plugins/chat-memory-window/index.mjs
@@ -311,8 +306,9 @@ chat-memory-window/
 ├── index.mjs            # 服务端插件入口（读取窗口 + 合并保存）
 ├── version.json         # 服务端插件版本信息
 ├── package.json         # 服务端插件入口声明（main: index.mjs）
-├── install-plugin.sh    # 可选的 Linux/macOS/Termux 一键安装脚本
-└── install-plugin.ps1   # 可选的 Windows 一键安装脚本
+├── install-plugin.sh    # 安装脚本：Linux/macOS/Termux
+├── install-plugin.ps1   # 安装脚本：Windows（PowerShell）
+└── install-plugin.bat   # 安装脚本：Windows（双击运行，内部调用上面的 ps1）
 ```
 
 同一个仓库根目录**同时**是合法的酒馆扩展和合法的服务端插件：
@@ -321,3 +317,6 @@ chat-memory-window/
 - 装到 `plugins/chat-memory-window/` 时，`index.mjs` 的相对导入指向 `src/util.js`。
 
 因此两条安装路径可以共用同一个 Git URL。
+
+> 安装脚本会把整个扩展目录（含服务端文件）复制进 `plugins/`，所以复制过去之后
+> 酒馆的 `enableServerPluginsAutoUpdate` 就能把这个 git 仓库一起自动更新。

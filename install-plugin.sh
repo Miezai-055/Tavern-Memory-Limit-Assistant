@@ -1,38 +1,46 @@
 #!/usr/bin/env bash
-# Install the Chat Memory Window *server plugin* into a SillyTavern installation.
 #
-# The frontend half of the extension is installed from the SillyTavern UI
-# (Extensions -> Install extension). This script only handles the server plugin,
-# which must live in <SillyTavern>/plugins/ and needs enableServerPlugins: true.
+# 安装「聊天内存限制助手」的**服务端插件**部分。
 #
-# Usage:
-#   bash install-plugin.sh [path-to-SillyTavern]
+# 优先做法：从已经装好的前端扩展目录直接复制（不需要联网，也不需要 git）。
+# 备选做法：本地找不到前端扩展时，才从仓库地址克隆一份。
 #
-# If the path is omitted, common install locations are probed, including
-# ~/SillyTavern (Termux / Android) and ./SillyTavern.
+# 用法：
+#   bash install-plugin.sh [酒馆根目录]
+#
+# 酒馆根目录可以省略，脚本会依次尝试：
+#   1. 自身所在位置往上推算（扩展装在酒馆里时最准）
+#   2. 当前目录、./SillyTavern、~/SillyTavern 等常见位置
 
 set -euo pipefail
 
 REPO_URL="${CMW_REPO_URL:-https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git}"
 PLUGIN_NAME="chat-memory-window"
+FRONTEND_REL="public/scripts/extensions/third-party/chat-memory-window"
 
-info() { printf '\033[36m[info]\033[0m %s\n' "$*"; }
-warn() { printf '\033[33m[warn]\033[0m %s\n' "$*"; }
-die() { printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
+info() { printf '\033[36m[信息]\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m[警告]\033[0m %s\n' "$*"; }
+die() { printf '\033[31m[错误]\033[0m %s\n' "$*" >&2; exit 1; }
 
-is_sillytavern_root() {
-    [ -n "${1:-}" ] && [ -f "$1/server.js" ] && [ -f "$1/public/script.js" ]
+is_st_root() {
+    [ -n "${1:-}" ] && [ -f "$1/server.js" ] && [ -f "$1/config.yaml" ]
 }
 
-find_sillytavern() {
+find_st() {
     if [ -n "${1:-}" ]; then
-        is_sillytavern_root "$1" || die "Not a SillyTavern root (missing server.js / public/script.js): $1"
+        is_st_root "$1" || die "不是有效的酒馆根目录（缺少 server.js / config.yaml）：$1"
         printf '%s' "$1"
         return 0
     fi
 
+    local self_root=''
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    self_root="$(cd "$script_dir/../../../../.." 2>/dev/null && pwd || true)"
+
     local candidate
     for candidate in \
+        "$self_root" \
         "$PWD" \
         "$PWD/SillyTavern" \
         "$HOME/SillyTavern" \
@@ -40,7 +48,7 @@ find_sillytavern() {
         "$HOME/SillyTavern-release" \
         "/opt/SillyTavern" \
         "/usr/local/SillyTavern"; do
-        if is_sillytavern_root "$candidate"; then
+        if is_st_root "$candidate"; then
             printf '%s' "$candidate"
             return 0
         fi
@@ -49,55 +57,65 @@ find_sillytavern() {
     return 1
 }
 
-command -v git >/dev/null 2>&1 || die "git is required but was not found in PATH."
-
-ST_ROOT="$(find_sillytavern "${1:-}")" || die "Could not locate SillyTavern. Pass its path explicitly: bash install-plugin.sh /path/to/SillyTavern"
+ST_ROOT="$(find_st "${1:-}")" || die "找不到酒馆目录。请显式指定：bash install-plugin.sh /path/to/SillyTavern"
 ST_ROOT="$(cd "$ST_ROOT" && pwd)"
-info "SillyTavern root: $ST_ROOT"
+info "酒馆根目录：$ST_ROOT"
 
 PLUGIN_DIR="$ST_ROOT/plugins/$PLUGIN_NAME"
+FRONTEND_DIR="$ST_ROOT/$FRONTEND_REL"
 mkdir -p "$ST_ROOT/plugins"
 
-if [ -d "$PLUGIN_DIR/.git" ]; then
-    info "Existing plugin checkout found, updating..."
-    git -C "$PLUGIN_DIR" pull --ff-only
-elif [ -e "$PLUGIN_DIR" ]; then
-    warn "$PLUGIN_DIR already exists but is not a git checkout."
-    warn "Move it aside and re-run if you want the script to manage it."
+# ---- 第 1 步：把服务端插件放到 plugins/ ----
+if [ -f "$FRONTEND_DIR/index.mjs" ]; then
+    info "从已安装的前端扩展复制（无需联网）..."
+    info "  来源：$FRONTEND_DIR"
+    mkdir -p "$PLUGIN_DIR"
+    cp -R "$FRONTEND_DIR/." "$PLUGIN_DIR/"
 else
-    info "Cloning server plugin into plugins/$PLUGIN_NAME ..."
-    git clone --depth 1 "$REPO_URL" "$PLUGIN_DIR"
+    warn "本地没找到前端扩展，改为从仓库克隆..."
+    command -v git >/dev/null 2>&1 || die "需要 git，但 PATH 里找不到它。"
+    if [ -d "$PLUGIN_DIR/.git" ]; then
+        git -C "$PLUGIN_DIR" pull --ff-only
+    else
+        rm -rf "$PLUGIN_DIR"
+        git clone --depth 1 "$REPO_URL" "$PLUGIN_DIR"
+    fi
 fi
 
-# The plugin directory must expose an entry file for the ST plugin loader.
-if [ ! -f "$PLUGIN_DIR/index.mjs" ]; then
-    die "index.mjs not found in $PLUGIN_DIR - the checkout looks incomplete."
-fi
+[ -f "$PLUGIN_DIR/index.mjs" ] || die "安装不完整：缺少 $PLUGIN_DIR/index.mjs"
+info "服务端插件已就位：$PLUGIN_DIR"
 
+# ---- 第 2 步：打开 enableServerPlugins ----
 CONFIG="$ST_ROOT/config.yaml"
 if [ -f "$CONFIG" ]; then
-    if grep -Eq '^[[:space:]]*enableServerPlugins:[[:space:]]*true[[:space:]]*$' "$CONFIG"; then
-        info "enableServerPlugins is already true in config.yaml."
+    if grep -Eq '^enableServerPlugins:[[:space:]]*true[[:space:]]*$' "$CONFIG"; then
+        info "config.yaml 里的 enableServerPlugins 已经是 true。"
     else
-        warn "enableServerPlugins is NOT enabled in $CONFIG"
-        warn "Set it to 'true' (config.yaml: enableServerPlugins: true) or the plugin will not load."
+        cp "$CONFIG" "$CONFIG.bak-chat-memory-window"
+        if grep -Eq '^[[:space:]]*enableServerPlugins:' "$CONFIG"; then
+            awk '
+                /^[[:space:]]*enableServerPlugins:[[:space:]]*/ { print "enableServerPlugins: true"; next }
+                { print }
+            ' "$CONFIG" > "$CONFIG.cmw-tmp" && mv "$CONFIG.cmw-tmp" "$CONFIG"
+            info "已把 enableServerPlugins 改成 true（原文件备份为 config.yaml.bak-chat-memory-window）。"
+        else
+            printf '\nenableServerPlugins: true\n' >> "$CONFIG"
+            info "已在 config.yaml 末尾补上 enableServerPlugins: true（原文件备份为 config.yaml.bak-chat-memory-window）。"
+        fi
     fi
 else
-    warn "config.yaml not found at $CONFIG - make sure enableServerPlugins is true."
+    warn "找不到 $CONFIG，请手动确认里面有 enableServerPlugins: true。"
 fi
 
 cat <<EOF
 
-Server plugin installed at:
-  $PLUGIN_DIR
+安装完成。
 
-Next steps:
-  1. Make sure config.yaml has: enableServerPlugins: true
-  2. Fully restart SillyTavern (server plugins load only at startup).
-  3. Hard-refresh the browser (Ctrl + Shift + R), then enable the extension
-     in the chat-memory-window settings panel.
+接下来：
+  1. 完全关闭酒馆再重新启动（服务端插件只在启动时加载，刷新页面没用）。
+  2. 浏览器按 Ctrl + Shift + R 强制刷新一次。
+  3. 打开「聊天内存限制助手」面板，勾选启用，再点「重新加载当前聊天」。
 
-Frontend half (if you have not done it yet):
-  SillyTavern -> Extensions -> Install extension ->
-  $REPO_URL
+启动日志里出现下面这一行，就说明服务端已经就绪：
+  [chat-memory-window] Server plugin 1.3.0 loaded.
 EOF

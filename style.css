@@ -152,6 +152,25 @@
     user-select: all;
 }
 
+#chat-memory-window-settings .cmw-server-hint-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+#chat-memory-window-settings .cmw-server-hint-alt {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--cmw-border);
+    opacity: 0.8;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+#chat-memory-window-settings .cmw-server-hint-alt code {
+    font-family: Consolas, Menlo, monospace;
+    word-break: break-all;
+}
+
 #chat-memory-window-settings .cmw-server-hint-actions {
     margin-top: 6px;
 }

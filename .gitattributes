@@ -11,3 +11,7 @@
 
 # PowerShell scripts keep CRLF on Windows checkouts.
 *.ps1 text eol=crlf
+
+# Batch launchers keep CRLF too. Keep them ASCII-only: cmd.exe mis-parses
+# non-ASCII batch files under chcp 65001.
+*.bat text eol=crlf

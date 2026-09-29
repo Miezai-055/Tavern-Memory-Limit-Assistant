@@ -4,9 +4,10 @@ import { extension_settings, getContext } from '../../../extensions.js';
 const EXTENSION_NAME = 'chat-memory-window';
 const SERVER_PREFIX = '/api/plugins/chat-memory-window';
 // The server half has to live in <SillyTavern>/plugins/. SillyTavern exposes no
-// URL-based installer for plugins/ (only for third-party extensions), so when
-// the bridge is missing the panel shows this exact command to copy and run.
-const SERVER_INSTALL_COMMAND = 'git clone https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git plugins/chat-memory-window';
+// web interface for installing server plugins (they are unsandboxed, so the
+// install path is deliberately CLI-only), so the panel offers the official
+// plugins.js command for the user to copy and run.
+const SERVER_INSTALL_COMMAND = 'node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git';
 const DEFAULT_SETTINGS = Object.freeze({
     enabled: false,
     limit: 20,
@@ -695,10 +696,15 @@ function createUI() {
                 </div>
                 <div id="chat-memory-window-status" class="cmw-status"></div>
                 <div id="chat-memory-window-server-hint" class="cmw-server-hint" hidden>
-                    <div>本扩展分两部分：前端（已装好）和服务端插件。请在酒馆根目录执行下面这条命令，然后<strong>完全重启酒馆</strong>：</div>
+                    <div class="cmw-server-hint-title">还差最后一步：安装服务端插件</div>
+                    <div>点击下面的按钮复制安装命令，然后在<strong>酒馆根目录</strong>打开终端执行它，最后<strong>完全重启酒馆</strong>：</div>
                     <code id="chat-memory-window-server-cmd" class="cmw-server-cmd"></code>
                     <div class="cmw-server-hint-actions">
-                        <button id="chat-memory-window-copy-cmd" class="menu_button cmw-button" type="button">复制命令</button>
+                        <button id="chat-memory-window-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
+                    </div>
+                    <div class="cmw-server-hint-alt">
+                        不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/chat-memory-window</code>
+                        整个文件夹复制到 <code>plugins/</code> 下，效果完全一样。
                     </div>
                 </div>
                 <div class="cmw-warning">完整历史仍保存在磁盘。窗口外只保留轻量楼层占位，因此楼层号继续正常增长；旧消息正文、变量和数据库快照不会进入浏览器内存。未进入聊天时启用不会执行重载。</div>
