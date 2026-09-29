@@ -1,71 +1,20 @@
+/*
+ * The settings panel itself uses SillyTavern's built-in `.inline-drawer` markup,
+ * so its frame, header, chevron icon and open/close animation all come from the
+ * host theme (public/style.css + the global click handler in public/script.js).
+ * Only the content laid out inside the drawer is styled here.
+ */
 :root {
-    --cmw-accent: var(--SmartThemeQuoteColor, #7aa2f7);
     --cmw-border: var(--SmartThemeBorderColor, rgba(127, 127, 127, 0.35));
     --cmw-bg: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.08));
 }
 
 #tavern-memory-limit-assistant-settings {
-    margin: 10px 0;
-}
-
-#tavern-memory-limit-assistant-settings .cmw-panel {
-    overflow: hidden;
-    border: 1px solid var(--cmw-border);
-    border-radius: 8px;
-    background: var(--cmw-bg);
-}
-
-#tavern-memory-limit-assistant-settings .cmw-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 38px;
-    padding: 8px 10px;
-    cursor: pointer;
-    list-style: none;
-    color: var(--cmw-accent);
-    font-weight: 600;
-    user-select: none;
-}
-
-#tavern-memory-limit-assistant-settings .cmw-summary::-webkit-details-marker {
-    display: none;
-}
-
-#tavern-memory-limit-assistant-settings .cmw-summary::before {
-    content: '▸';
-    flex: 0 0 auto;
-    color: var(--cmw-accent);
-    transition: transform 0.15s ease;
-}
-
-#tavern-memory-limit-assistant-settings .cmw-panel[open] .cmw-summary::before {
-    transform: rotate(90deg);
-}
-
-#tavern-memory-limit-assistant-settings .cmw-summary-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    flex: 1 1 auto;
-}
-
-#tavern-memory-limit-assistant-settings .cmw-summary-hint {
-    flex: 0 0 auto;
-    color: var(--SmartThemeBodyColor, inherit);
-    font-size: 0.78em;
-    font-weight: 400;
-    opacity: 0.65;
+    margin-bottom: 10px;
 }
 
 #tavern-memory-limit-assistant-settings .cmw-body {
-    padding: 0 10px 10px;
-    /* Fallback first: color-mix() needs Safari 16.2+ / Chrome 111+. Older
-       mobile WebViews keep the plain border instead of dropping it. */
-    border-top: 1px solid var(--cmw-border);
-    border-top: 1px solid color-mix(in srgb, var(--cmw-border) 75%, transparent);
+    padding: 0 0 8px;
 }
 
 #tavern-memory-limit-assistant-settings .cmw-row {
@@ -183,10 +132,6 @@
 }
 
 @media (max-width: 480px) {
-    #tavern-memory-limit-assistant-settings .cmw-summary-hint {
-        display: none;
-    }
-
     #tavern-memory-limit-assistant-settings .cmw-button {
         width: 100%;
     }

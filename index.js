@@ -668,6 +668,29 @@ async function reloadCurrentChat() {
     }
 }
 
+/**
+ * Mirror SillyTavern's own drawer toggling (see public/scripts/utils.js::toggleDrawer
+ * and the global click handler in public/script.js) so this extension looks and
+ * behaves exactly like built-in drawers, without importing internal modules that
+ * may not exist on older releases.
+ */
+function setDrawerExpanded(drawer, expanded) {
+    const icon = drawer?.querySelector(':scope > .inline-drawer-header .inline-drawer-icon');
+    const content = drawer?.querySelector(':scope > .inline-drawer-content');
+    if (!icon || !content) return;
+
+    icon.classList.toggle('down', !expanded);
+    icon.classList.toggle('up', expanded);
+    icon.classList.toggle('fa-circle-chevron-down', !expanded);
+    icon.classList.toggle('fa-circle-chevron-up', expanded);
+    content.style.display = expanded ? 'block' : 'none';
+}
+
+function isDrawerExpanded(drawer) {
+    const icon = drawer?.querySelector(':scope > .inline-drawer-header .inline-drawer-icon');
+    return Boolean(icon?.classList.contains('up'));
+}
+
 function createUI() {
     if (uiReady) return;
     const host = document.querySelector('#extensions_settings2') || document.querySelector('#extensions_settings');
@@ -677,46 +700,48 @@ function createUI() {
     const wrapper = document.createElement('div');
     wrapper.id = 'tavern-memory-limit-assistant-settings';
     wrapper.innerHTML = `
-        <details id="tavern-memory-limit-assistant-panel" class="cmw-panel">
-            <summary class="cmw-summary">
-                <span class="cmw-summary-title"><i class="fa-solid fa-memory"></i><span>聊天内存限制助手</span></span>
-                <span class="cmw-summary-hint">点击展开设置</span>
-            </summary>
-            <div class="cmw-body">
-                <div class="cmw-row cmw-switch-row">
-                    <label for="tavern-memory-limit-assistant-enabled">启用真实内存窗口</label>
-                    <input id="tavern-memory-limit-assistant-enabled" type="checkbox">
-                </div>
-                <div class="cmw-row">
-                    <label for="tavern-memory-limit-assistant-limit">浏览器加载最近消息数</label>
-                    <input id="tavern-memory-limit-assistant-limit" class="text_pole cmw-number" type="number" min="1" max="500" step="1">
-                </div>
-                <div class="cmw-actions">
-                    <button id="tavern-memory-limit-assistant-reload" class="menu_button cmw-button" type="button">重新加载当前聊天</button>
-                </div>
-                <div id="tavern-memory-limit-assistant-status" class="cmw-status"></div>
-                <div id="tavern-memory-limit-assistant-server-hint" class="cmw-server-hint" hidden>
-                    <div class="cmw-server-hint-title">还差最后一步：安装服务端插件</div>
-                    <div>点击下面的按钮复制安装命令，然后在<strong>酒馆根目录</strong>打开终端执行它，最后<strong>完全重启酒馆</strong>：</div>
-                    <code id="tavern-memory-limit-assistant-server-cmd" class="cmw-server-cmd"></code>
-                    <div class="cmw-server-hint-actions">
-                        <button id="tavern-memory-limit-assistant-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
-                    </div>
-                    <div class="cmw-server-hint-alt">
-                        不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant</code>
-                        整个文件夹复制到 <code>plugins/</code> 下，效果完全一样。
-                    </div>
-                </div>
-                <div class="cmw-warning">完整历史仍保存在磁盘。窗口外只保留轻量楼层占位，因此楼层号继续正常增长；旧消息正文、变量和数据库快照不会进入浏览器内存。未进入聊天时启用不会执行重载。</div>
+        <div class="inline-drawer">
+            <div class="inline-drawer-toggle inline-drawer-header">
+                <b><i class="fa-solid fa-memory"></i> 聊天内存限制助手</b>
+                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
-        </details>
+            <div class="inline-drawer-content">
+                <div class="cmw-body">
+                    <div class="cmw-row cmw-switch-row">
+                        <label for="tavern-memory-limit-assistant-enabled">启用真实内存窗口</label>
+                        <input id="tavern-memory-limit-assistant-enabled" type="checkbox">
+                    </div>
+                    <div class="cmw-row">
+                        <label for="tavern-memory-limit-assistant-limit">浏览器加载最近消息数</label>
+                        <input id="tavern-memory-limit-assistant-limit" class="text_pole cmw-number" type="number" min="1" max="500" step="1">
+                    </div>
+                    <div class="cmw-actions">
+                        <button id="tavern-memory-limit-assistant-reload" class="menu_button cmw-button" type="button">重新加载当前聊天</button>
+                    </div>
+                    <div id="tavern-memory-limit-assistant-status" class="cmw-status"></div>
+                    <div id="tavern-memory-limit-assistant-server-hint" class="cmw-server-hint" hidden>
+                        <div class="cmw-server-hint-title">还差最后一步：安装服务端插件</div>
+                        <div>点击下面的按钮复制安装命令，然后在<strong>酒馆根目录</strong>打开终端执行它，最后<strong>完全重启酒馆</strong>：</div>
+                        <code id="tavern-memory-limit-assistant-server-cmd" class="cmw-server-cmd"></code>
+                        <div class="cmw-server-hint-actions">
+                            <button id="tavern-memory-limit-assistant-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
+                        </div>
+                        <div class="cmw-server-hint-alt">
+                            不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant</code>
+                            整个文件夹复制到 <code>plugins/</code> 下，效果完全一样。
+                        </div>
+                    </div>
+                    <div class="cmw-warning">完整历史仍保存在磁盘。窗口外只保留轻量楼层占位，因此楼层号继续正常增长；旧消息正文、变量和数据库快照不会进入浏览器内存。未进入聊天时启用不会执行重载。</div>
+                </div>
+            </div>
+        </div>
     `;
     host.appendChild(wrapper);
 
     const enabled = wrapper.querySelector('#tavern-memory-limit-assistant-enabled');
     const limit = wrapper.querySelector('#tavern-memory-limit-assistant-limit');
     const reload = wrapper.querySelector('#tavern-memory-limit-assistant-reload');
-    const panel = wrapper.querySelector('#tavern-memory-limit-assistant-panel');
+    const drawer = wrapper.querySelector('.inline-drawer');
     const serverCmd = wrapper.querySelector('#tavern-memory-limit-assistant-server-cmd');
     const copyCmd = wrapper.querySelector('#tavern-memory-limit-assistant-copy-cmd');
 
@@ -748,10 +773,13 @@ function createUI() {
 
     enabled.checked = Boolean(currentSettings.enabled);
     limit.value = String(currentSettings.limit);
-    panel.open = !currentSettings.collapsed;
+    setDrawerExpanded(drawer, !currentSettings.collapsed);
 
-    panel.addEventListener('toggle', () => {
-        currentSettings.collapsed = !panel.open;
+    // SillyTavern's global click handler (public/script.js) already performs the
+    // open/close. We only mirror the resulting state into settings so the user's
+    // choice survives a reload.
+    drawer?.addEventListener('inline-drawer-toggle', () => {
+        currentSettings.collapsed = !isDrawerExpanded(drawer);
         persistSettings();
     });
 
