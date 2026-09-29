@@ -1,0 +1,18 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Chat memory window runtime artifacts (created next to chat files, never in the repo)
+*.chat-memory-window.full
+*.bak-chat-memory-window
+
+# Local backups / scratch
+*.bak
+*.bak-*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
