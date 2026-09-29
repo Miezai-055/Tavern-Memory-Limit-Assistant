@@ -258,25 +258,6 @@ ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 ---
 
-## 发布到 GitHub（维护者）
-
-如果你 fork 或改名了仓库，需要同步替换这几处 URL：
-
-| 文件 | 位置 |
-| --- | --- |
-| `manifest.json` | `homePage` |
-| `index.js` | `SERVER_INSTALL_COMMAND`（面板里展示给用户的命令） |
-| `install-plugin.sh` | `REPO_URL` 默认值（可用环境变量 `CMW_REPO_URL` 覆盖） |
-| `install-plugin.ps1` | `$RepoUrl` 默认值（可用环境变量 `CMW_REPO_URL` 覆盖） |
-| `README.md` | 安装章节里的示例 URL |
-
-推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第 3 步处理。
-
-> **关于命名**：仓库名、安装后的文件夹名、以及扩展的内部标识（`EXTENSION_NAME`、
-> `SERVER_PREFIX`、服务端 `plugin id`、快照后缀 `.tavern-memory-limit-assistant.full`）
-> 已全部统一为 `tavern-memory-limit-assistant`。
-
----
 
 ## 目录结构
 
@@ -290,7 +271,8 @@ Tavern-Memory-Limit-Assistant/
 ├── package.json         # 服务端插件入口声明（main: index.mjs）
 ├── install-plugin.sh    # 安装脚本：Linux/macOS/Termux
 ├── install-plugin.ps1   # 安装脚本：Windows（PowerShell）
-└── install-plugin.bat   # 安装脚本：Windows（双击运行，内部调用上面的 ps1）
+├── install-plugin.bat   # 安装脚本：Windows（双击运行，内部调用上面的 ps1）
+└── LICENSE              # Apache License 2.0
 ```
 
 同一个仓库根目录**同时**是合法的酒馆扩展和合法的服务端插件：

@@ -3,5 +3,6 @@
     "version": "1.3.0",
     "description": "Server bridge for the Tavern Memory Limit Assistant extension. Loads only a bounded tail of a chat into the browser and safely merges windowed saves back into the full on-disk history.",
     "main": "index.mjs",
-    "private": true
+    "private": true,
+    "license": "Apache-2.0"
 }
