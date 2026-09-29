@@ -14,9 +14,9 @@
 
 set -euo pipefail
 
-REPO_URL="${CMW_REPO_URL:-https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git}"
-PLUGIN_NAME="chat-memory-window"
-FRONTEND_REL="public/scripts/extensions/third-party/chat-memory-window"
+REPO_URL="${CMW_REPO_URL:-https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant.git}"
+PLUGIN_NAME="Tavern-Memory-Limit-Assistant"
+FRONTEND_REL="public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant"
 
 info() { printf '\033[36m[信息]\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m[警告]\033[0m %s\n' "$*"; }

@@ -10,12 +10,12 @@
 [CmdletBinding()]
 param(
     [string]$SillyTavern,
-    [string]$RepoUrl = $(if ($env:CMW_REPO_URL) { $env:CMW_REPO_URL } else { 'https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git' })
+    [string]$RepoUrl = $(if ($env:CMW_REPO_URL) { $env:CMW_REPO_URL } else { 'https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant.git' })
 )
 
 $ErrorActionPreference = 'Stop'
-$PluginName = 'chat-memory-window'
-$FrontendRel = 'public\scripts\extensions\third-party\chat-memory-window'
+$PluginName = 'Tavern-Memory-Limit-Assistant'
+$FrontendRel = 'public\scripts\extensions\third-party\Tavern-Memory-Limit-Assistant'
 
 function Write-Info2 { param([string]$Message) Write-Host "[信息] $Message" -ForegroundColor Cyan }
 function Write-Warn2 { param([string]$Message) Write-Host "[警告] $Message" -ForegroundColor Yellow }

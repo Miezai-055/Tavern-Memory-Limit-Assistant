@@ -7,7 +7,7 @@ const SERVER_PREFIX = '/api/plugins/chat-memory-window';
 // web interface for installing server plugins (they are unsandboxed, so the
 // install path is deliberately CLI-only), so the panel offers the official
 // plugins.js command for the user to copy and run.
-const SERVER_INSTALL_COMMAND = 'node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git';
+const SERVER_INSTALL_COMMAND = 'node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant.git';
 const DEFAULT_SETTINGS = Object.freeze({
     enabled: false,
     limit: 20,
@@ -703,7 +703,7 @@ function createUI() {
                         <button id="chat-memory-window-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
                     </div>
                     <div class="cmw-server-hint-alt">
-                        不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/chat-memory-window</code>
+                        不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant</code>
                         整个文件夹复制到 <code>plugins/</code> 下，效果完全一样。
                     </div>
                 </div>

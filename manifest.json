@@ -5,9 +5,9 @@
   "optional": [],
   "js": "index.js",
   "css": "style.css",
-  "author": "liuyuanjianlyj-crypto",
+  "author": "Miezai-055",
   "version": "1.3.0",
-  "homePage": "https://github.com/liuyuanjianlyj-crypto/chat-memory-window",
+  "homePage": "https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant",
   "auto_update": true,
   "description": "为长聊天提供可选的真实内存窗口，保留绝对楼层号，保护完整历史，并为数据库 V2 回放保留轻量锚点。"
 }

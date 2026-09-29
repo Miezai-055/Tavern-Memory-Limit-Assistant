@@ -16,12 +16,12 @@
 
 | 部分 | 安装位置 | 作用 |
 | --- | --- | --- |
-| 前端扩展 | `public/scripts/extensions/third-party/chat-memory-window/` | 劫持 `fetch`、裁剪浏览器内存、提供设置面板 |
-| 服务端插件 | `plugins/chat-memory-window/` | 只读尾部、合并保存、维护全历史快照 |
+| 前端扩展 | `public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant/` | 劫持 `fetch`、裁剪浏览器内存、提供设置面板 |
+| 服务端插件 | `plugins/Tavern-Memory-Limit-Assistant/` | 只读尾部、合并保存、维护全历史快照 |
 
 转发链路：
 
-1. 加载聊天时，`/api/chats/get` 被转发到 `/api/plugins/chat-memory-window/chat/get?window_size=N`，
+1. 加载聊天时，`/api/chats/get` 被转发到 `/api/plugins/chat-memory-window/chat/get?window_size=N`（`chat-memory-window` 是插件的**内部 ID**，与仓库名无关），
    服务端流式扫描聊天文件，**只把最近 N 条真实消息**返回浏览器。
 2. 窗口外的楼层被替换成 `is_system: true` 的轻量占位符，保留原始 `is_user` 角色，
    因此绝对楼层号和 AI 楼层统计不受影响。
@@ -77,7 +77,7 @@ enableServerPlugins: true
 3. 在 **Install extension** 的输入框里粘贴这一行：
 
 ```text
-https://github.com/liuyuanjianlyj-crypto/chat-memory-window
+https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant
 ```
 
 4. 点确认安装
@@ -95,7 +95,7 @@ https://github.com/liuyuanjianlyj-crypto/chat-memory-window
 1. 打开这个文件夹：
 
 ```text
-<酒馆目录>\public\scripts\extensions\third-party\chat-memory-window\
+<酒馆目录>\public\scripts\extensions\third-party\Tavern-Memory-Limit-Assistant\
 ```
 
 2. 双击里面的 **`install-plugin.bat`**
@@ -108,7 +108,7 @@ https://github.com/liuyuanjianlyj-crypto/chat-memory-window
 1. 复制整个文件夹：
 
 ```text
-<酒馆目录>\public\scripts\extensions\third-party\chat-memory-window
+<酒馆目录>\public\scripts\extensions\third-party\Tavern-Memory-Limit-Assistant
 ```
 
 2. 粘贴到：
@@ -122,7 +122,7 @@ https://github.com/liuyuanjianlyj-crypto/chat-memory-window
 在 `<酒馆目录>` 里打开终端（PowerShell / CMD / Termux 都行），执行：
 
 ```bash
-node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git
+node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant.git
 ```
 
 `plugins.js` 是酒馆**自带**的插件安装工具，它会自动把插件放到位。
@@ -132,7 +132,7 @@ node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-win
 不管用哪种方式，最后**一定要能看到这个文件**：
 
 ```text
-<酒馆目录>\plugins\chat-memory-window\index.mjs
+<酒馆目录>\plugins\Tavern-Memory-Limit-Assistant\index.mjs
 ```
 
 看不到它，第 4 步重启后服务端就不会加载。
@@ -156,7 +156,7 @@ node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-win
 | 要检查的 | 怎么确认 |
 | --- | --- |
 | `enableServerPlugins` 是否为 `true` | 打开 `config.yaml`，看第 1 步那一行 |
-| 插件文件是否存在 | `<酒馆目录>\plugins\chat-memory-window\index.mjs` |
+| 插件文件是否存在 | `<酒馆目录>\plugins\Tavern-Memory-Limit-Assistant\index.mjs` |
 | 是否真的重启了 | 关掉酒馆窗口/进程再启动，而不是只刷新网页 |
 
 ---
@@ -194,9 +194,9 @@ nano ~/SillyTavern/config.yaml     # 把 enableServerPlugins 改成 true
 
 # 第 3 步：安装服务端插件（二选一）
 cd ~/SillyTavern
-node plugins.js install https://github.com/liuyuanjianlyj-crypto/chat-memory-window.git
+node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assistant.git
 # 或者用脚本（会自动定位酒馆目录并打开 enableServerPlugins）：
-#   cd public/scripts/extensions/third-party/chat-memory-window && bash install-plugin.sh
+#   cd public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant && bash install-plugin.sh
 
 # 第 4 步：完全重启酒馆
 ```
@@ -219,7 +219,7 @@ cd ~/SillyTavern && node -v          # 应输出 v18 或更高
 grep -n 'enableServerPlugins' ~/SillyTavern/config.yaml   # 应为 true
 
 # c. 插件文件确实就位
-ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
+ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 # d. 完全重启后，日志里应出现这一行
 #    [chat-memory-window] Server plugin 1.3.0 loaded.
@@ -253,7 +253,7 @@ ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
 ## 卸载
 
 1. 取消勾选扩展，或直接在扩展列表里删除扩展。
-2. 删除酒馆根目录下的 `plugins/chat-memory-window/`。
+2. 删除酒馆根目录下的 `plugins/Tavern-Memory-Limit-Assistant/`。
 3. 可选：删除聊天目录下遗留的 `*.chat-memory-window.full` 快照文件（不删也不影响正常使用）。
 
 ---
@@ -272,17 +272,17 @@ ls ~/SillyTavern/plugins/chat-memory-window/index.mjs
 
 推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第 3 步处理。
 
-> 仓库名会影响克隆后的文件夹名。本仓库按 `chat-memory-window` 命名，
-> 与 `index.js` 里的 `EXTENSION_NAME`、`SERVER_PREFIX` 和服务端 `plugin id` 保持一致。
-> 如果改了仓库名，扩展本身仍能工作（前端靠 manifest，服务端靠 package.json 的 `main`），
-> 但建议同时统一 `SERVER_PREFIX` 与服务端 `info.id`，否则前后端桥接会找不到对方。
+> **关于命名**：仓库名/文件夹名是 `Tavern-Memory-Limit-Assistant`，但扩展的**内部标识**
+> （`EXTENSION_NAME`、`SERVER_PREFIX`、服务端 `plugin id`、快照后缀 `.chat-memory-window.full`）
+> 仍然是 `chat-memory-window`。这不影响功能：前端靠 `manifest.json` 加载，服务端靠
+> `package.json` 的 `main` 加载，插件 ID 只需要前后端**彼此一致**即可。
 
 ---
 
 ## 目录结构
 
 ```text
-chat-memory-window/
+Tavern-Memory-Limit-Assistant/
 ├── manifest.json        # 前端扩展清单
 ├── index.js             # 前端扩展入口（fetch 桥接 + 内存裁剪 + UI）
 ├── style.css            # 设置面板样式
@@ -296,8 +296,8 @@ chat-memory-window/
 
 同一个仓库根目录**同时**是合法的酒馆扩展和合法的服务端插件：
 
-- 装到 `third-party/chat-memory-window/` 时，`index.js` 的相对导入指向 `public/script.js`；
-- 装到 `plugins/chat-memory-window/` 时，`index.mjs` 的相对导入指向 `src/util.js`。
+- 装到 `third-party/Tavern-Memory-Limit-Assistant/` 时，`index.js` 的相对导入指向 `public/script.js`；
+- 装到 `plugins/Tavern-Memory-Limit-Assistant/` 时，`index.mjs` 的相对导入指向 `src/util.js`。
 
 因此两条安装路径可以共用同一个 Git URL。
 
