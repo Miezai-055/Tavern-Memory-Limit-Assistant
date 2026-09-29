@@ -1,8 +1,8 @@
 import { eventSource, event_types, saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings, getContext } from '../../../extensions.js';
 
-const EXTENSION_NAME = 'chat-memory-window';
-const SERVER_PREFIX = '/api/plugins/chat-memory-window';
+const EXTENSION_NAME = 'tavern-memory-limit-assistant';
+const SERVER_PREFIX = '/api/plugins/tavern-memory-limit-assistant';
 // The server half has to live in <SillyTavern>/plugins/. SillyTavern exposes no
 // web interface for installing server plugins (they are unsandboxed, so the
 // install path is deliberately CLI-only), so the panel offers the official
@@ -131,8 +131,8 @@ function makeWindowPlaceholder(index, isUser = true, replayData = null) {
         is_system: true,
         send_date: '',
         mes: '',
-        extra: { __chatMemoryWindowPlaceholder: true, floor: index },
-        __chatMemoryWindowPlaceholder: true,
+        extra: { __tavernMemoryLimitAssistantPlaceholder: true, floor: index },
+        __tavernMemoryLimitAssistantPlaceholder: true,
     };
 
     if (replayData) {
@@ -142,8 +142,8 @@ function makeWindowPlaceholder(index, isUser = true, replayData = null) {
 }
 
 function isWindowPlaceholder(message) {
-    return message?.__chatMemoryWindowPlaceholder === true
-        || message?.extra?.__chatMemoryWindowPlaceholder === true;
+    return message?.__tavernMemoryLimitAssistantPlaceholder === true
+        || message?.extra?.__tavernMemoryLimitAssistantPlaceholder === true;
 }
 
 function keyFromBody(body) {
@@ -160,7 +160,7 @@ function parseHeaderInteger(response, name, fallback = null) {
 }
 
 function updateStateFromResponse(response, bodyKey = null, payloadState = null) {
-    if (response.headers.get('X-Chat-Memory-Window') !== '1') {
+    if (response.headers.get('X-Tavern-Memory-Limit-Assistant') !== '1') {
         state.serverAvailable = false;
         state.lastError = '服务端桥接未返回窗口标记';
         updateStatus();
@@ -171,13 +171,13 @@ function updateStateFromResponse(response, bodyKey = null, payloadState = null) 
     state.windowLoaded = true;
     state.start = Number.isInteger(payloadState?.start)
         ? payloadState.start
-        : parseHeaderInteger(response, 'X-Chat-Memory-Window-Start', 0);
+        : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Start', 0);
     state.total = Number.isInteger(payloadState?.total)
         ? payloadState.total
-        : parseHeaderInteger(response, 'X-Chat-Memory-Window-Total', 0);
+        : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Total', 0);
     state.limit = Number.isInteger(payloadState?.limit)
         ? payloadState.limit
-        : parseHeaderInteger(response, 'X-Chat-Memory-Window-Limit', getSettings().limit);
+        : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Limit', getSettings().limit);
     state.loaded = Math.max(0, Math.min(state.limit, state.total));
     if (bodyKey) state.key = bodyKey;
     state.lastError = '';
@@ -324,7 +324,7 @@ function trimChatArray() {
             chat[index].is_system = true;
             chat[index].extra = {
                 ...(chat[index].extra || {}),
-                __chatMemoryWindowPlaceholder: true,
+                __tavernMemoryLimitAssistantPlaceholder: true,
                 floor: index,
             };
         }
@@ -351,13 +351,13 @@ function trimChatArray() {
 }
 
 function installFetchBridge() {
-    if (globalThis.__chatMemoryWindowFetchInstalled) return;
+    if (globalThis.__tavernMemoryLimitAssistantFetchInstalled) return;
 
     const originalFetch = window.fetch.bind(window);
-    globalThis.__chatMemoryWindowFetchInstalled = true;
-    globalThis.__chatMemoryWindowOriginalFetch = originalFetch;
+    globalThis.__tavernMemoryLimitAssistantFetchInstalled = true;
+    globalThis.__tavernMemoryLimitAssistantOriginalFetch = originalFetch;
 
-    window.fetch = async function chatMemoryWindowFetch(input, init) {
+    window.fetch = async function tavernMemoryLimitAssistantFetch(input, init) {
         const currentSettings = getSettings();
         if (!currentSettings.enabled) {
             return originalFetch(input, init);
@@ -527,10 +527,10 @@ function installFetchBridge() {
             }
             const total = Number.isInteger(resultBody?.total)
                 ? resultBody.total
-                : parseHeaderInteger(response, 'X-Chat-Memory-Window-Total', null);
+                : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Total', null);
             const start = Number.isInteger(resultBody?.start)
                 ? resultBody.start
-                : parseHeaderInteger(response, 'X-Chat-Memory-Window-Start', null);
+                : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Start', null);
             if (total !== null) state.total = total;
             if (start !== null) state.start = start;
             state.serverAvailable = true;
@@ -578,10 +578,10 @@ function installFetchBridge() {
                     }
                     const retryTotal = Number.isInteger(retryBody?.total)
                         ? retryBody.total
-                        : parseHeaderInteger(response, 'X-Chat-Memory-Window-Total', null);
+                        : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Total', null);
                     const retryStart = Number.isInteger(retryBody?.start)
                         ? retryBody.start
-                        : parseHeaderInteger(response, 'X-Chat-Memory-Window-Start', null);
+                        : parseHeaderInteger(response, 'X-Tavern-Memory-Limit-Assistant-Start', null);
                     if (retryTotal !== null) state.total = retryTotal;
                     if (retryStart !== null) state.start = retryStart;
                     state.serverAvailable = true;
@@ -608,9 +608,9 @@ function installFetchBridge() {
 function updateStatus() {
     if (!uiReady) return;
     const currentSettings = getSettings();
-    const status = document.querySelector('#chat-memory-window-status');
-    const reloadButton = document.querySelector('#chat-memory-window-reload');
-    const serverHint = document.querySelector('#chat-memory-window-server-hint');
+    const status = document.querySelector('#tavern-memory-limit-assistant-status');
+    const reloadButton = document.querySelector('#tavern-memory-limit-assistant-reload');
+    const serverHint = document.querySelector('#tavern-memory-limit-assistant-server-hint');
     if (!status) return;
 
     const activeChat = hasActiveChat();
@@ -658,7 +658,7 @@ async function reloadCurrentChat() {
         await getContext().reloadCurrentChat();
         return true;
     } catch (error) {
-        console.error('[chat-memory-window] Failed to reload current chat:', error);
+        console.error('[tavern-memory-limit-assistant] Failed to reload current chat:', error);
         try {
             globalThis.toastr?.error(`重新加载聊天失败：${error?.message || error}`);
         } catch {
@@ -675,32 +675,32 @@ function createUI() {
 
     const currentSettings = getSettings();
     const wrapper = document.createElement('div');
-    wrapper.id = 'chat-memory-window-settings';
+    wrapper.id = 'tavern-memory-limit-assistant-settings';
     wrapper.innerHTML = `
-        <details id="chat-memory-window-panel" class="cmw-panel">
+        <details id="tavern-memory-limit-assistant-panel" class="cmw-panel">
             <summary class="cmw-summary">
                 <span class="cmw-summary-title"><i class="fa-solid fa-memory"></i><span>聊天内存限制助手</span></span>
                 <span class="cmw-summary-hint">点击展开设置</span>
             </summary>
             <div class="cmw-body">
                 <div class="cmw-row cmw-switch-row">
-                    <label for="chat-memory-window-enabled">启用真实内存窗口</label>
-                    <input id="chat-memory-window-enabled" type="checkbox">
+                    <label for="tavern-memory-limit-assistant-enabled">启用真实内存窗口</label>
+                    <input id="tavern-memory-limit-assistant-enabled" type="checkbox">
                 </div>
                 <div class="cmw-row">
-                    <label for="chat-memory-window-limit">浏览器加载最近消息数</label>
-                    <input id="chat-memory-window-limit" class="text_pole cmw-number" type="number" min="1" max="500" step="1">
+                    <label for="tavern-memory-limit-assistant-limit">浏览器加载最近消息数</label>
+                    <input id="tavern-memory-limit-assistant-limit" class="text_pole cmw-number" type="number" min="1" max="500" step="1">
                 </div>
                 <div class="cmw-actions">
-                    <button id="chat-memory-window-reload" class="menu_button cmw-button" type="button">重新加载当前聊天</button>
+                    <button id="tavern-memory-limit-assistant-reload" class="menu_button cmw-button" type="button">重新加载当前聊天</button>
                 </div>
-                <div id="chat-memory-window-status" class="cmw-status"></div>
-                <div id="chat-memory-window-server-hint" class="cmw-server-hint" hidden>
+                <div id="tavern-memory-limit-assistant-status" class="cmw-status"></div>
+                <div id="tavern-memory-limit-assistant-server-hint" class="cmw-server-hint" hidden>
                     <div class="cmw-server-hint-title">还差最后一步：安装服务端插件</div>
                     <div>点击下面的按钮复制安装命令，然后在<strong>酒馆根目录</strong>打开终端执行它，最后<strong>完全重启酒馆</strong>：</div>
-                    <code id="chat-memory-window-server-cmd" class="cmw-server-cmd"></code>
+                    <code id="tavern-memory-limit-assistant-server-cmd" class="cmw-server-cmd"></code>
                     <div class="cmw-server-hint-actions">
-                        <button id="chat-memory-window-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
+                        <button id="tavern-memory-limit-assistant-copy-cmd" class="menu_button cmw-button" type="button">一键复制安装命令</button>
                     </div>
                     <div class="cmw-server-hint-alt">
                         不方便用命令行？也可以把 <code>public/scripts/extensions/third-party/Tavern-Memory-Limit-Assistant</code>
@@ -713,12 +713,12 @@ function createUI() {
     `;
     host.appendChild(wrapper);
 
-    const enabled = wrapper.querySelector('#chat-memory-window-enabled');
-    const limit = wrapper.querySelector('#chat-memory-window-limit');
-    const reload = wrapper.querySelector('#chat-memory-window-reload');
-    const panel = wrapper.querySelector('#chat-memory-window-panel');
-    const serverCmd = wrapper.querySelector('#chat-memory-window-server-cmd');
-    const copyCmd = wrapper.querySelector('#chat-memory-window-copy-cmd');
+    const enabled = wrapper.querySelector('#tavern-memory-limit-assistant-enabled');
+    const limit = wrapper.querySelector('#tavern-memory-limit-assistant-limit');
+    const reload = wrapper.querySelector('#tavern-memory-limit-assistant-reload');
+    const panel = wrapper.querySelector('#tavern-memory-limit-assistant-panel');
+    const serverCmd = wrapper.querySelector('#tavern-memory-limit-assistant-server-cmd');
+    const copyCmd = wrapper.querySelector('#tavern-memory-limit-assistant-copy-cmd');
 
     if (serverCmd) serverCmd.textContent = SERVER_INSTALL_COMMAND;
 
@@ -822,7 +822,7 @@ getSettings();
 installFetchBridge();
 installEventHooks();
 
-globalThis.ChatMemoryWindow = Object.freeze({
+globalThis.TavernMemoryLimitAssistant = Object.freeze({
     getState: () => ({ ...state, settings: { ...getSettings() } }),
     reload: reloadCurrentChat,
     setLimit: async (value) => {

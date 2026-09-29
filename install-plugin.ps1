@@ -37,7 +37,7 @@ function Resolve-StRoot {
     }
 
     # 扩展装在酒馆里时，脚本自身位置是最可靠的线索：
-    # <酒馆>/public/scripts/extensions/third-party/chat-memory-window/install-plugin.ps1
+    # <酒馆>/public/scripts/extensions/third-party/tavern-memory-limit-assistant/install-plugin.ps1
     $selfRoot = $null
     if ($PSScriptRoot) {
         $selfRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))))
@@ -102,13 +102,13 @@ if (Test-Path -LiteralPath $configPath -PathType Leaf) {
     if ($configText -match '(?m)^enableServerPlugins:\s*true\s*$') {
         Write-Info2 'config.yaml 里的 enableServerPlugins 已经是 true。'
     } else {
-        Copy-Item -LiteralPath $configPath -Destination "$configPath.bak-chat-memory-window" -Force
+        Copy-Item -LiteralPath $configPath -Destination "$configPath.bak-tavern-memory-limit-assistant" -Force
         if ($configText -match '(?m)^\s*enableServerPlugins:') {
             $newText = [regex]::Replace($configText, '(?m)^\s*enableServerPlugins:.*$', 'enableServerPlugins: true')
-            Write-Info2 '已把 enableServerPlugins 改成 true（原文件备份为 config.yaml.bak-chat-memory-window）。'
+            Write-Info2 '已把 enableServerPlugins 改成 true（原文件备份为 config.yaml.bak-tavern-memory-limit-assistant）。'
         } else {
             $newText = $configText.TrimEnd() + "`r`n`r`nenableServerPlugins: true`r`n"
-            Write-Info2 '已在 config.yaml 末尾补上 enableServerPlugins: true（原文件备份为 config.yaml.bak-chat-memory-window）。'
+            Write-Info2 '已在 config.yaml 末尾补上 enableServerPlugins: true（原文件备份为 config.yaml.bak-tavern-memory-limit-assistant）。'
         }
         Set-Content -LiteralPath $configPath -Value $newText -Encoding UTF8 -NoNewline
     }
@@ -126,5 +126,5 @@ Write-Host @'
   3. 打开「聊天内存限制助手」面板，勾选启用，再点「重新加载当前聊天」。
 
 启动日志里出现下面这一行，就说明服务端已经就绪：
-  [chat-memory-window] Server plugin 1.3.0 loaded.
+  [tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
 '@

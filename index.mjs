@@ -6,7 +6,7 @@ import sanitize from 'sanitize-filename';
 import { sync as writeFileAtomicSync } from 'write-file-atomic';
 import { isPathUnderParent, tryParse } from '../../src/util.js';
 
-const PLUGIN_ID = 'chat-memory-window';
+const PLUGIN_ID = 'tavern-memory-limit-assistant';
 const VERSION = '1.3.0';
 
 export const info = {
@@ -16,11 +16,11 @@ export const info = {
     description: 'Loads only a bounded tail of character chats in the browser and safely merges windowed saves.',
 };
 
-const HEADER_WINDOW = 'X-Chat-Memory-Window';
-const HEADER_START = 'X-Chat-Memory-Window-Start';
-const HEADER_TOTAL = 'X-Chat-Memory-Window-Total';
-const HEADER_LIMIT = 'X-Chat-Memory-Window-Limit';
-const FULL_HISTORY_SUFFIX = '.chat-memory-window.full';
+const HEADER_WINDOW = 'X-Tavern-Memory-Limit-Assistant';
+const HEADER_START = 'X-Tavern-Memory-Limit-Assistant-Start';
+const HEADER_TOTAL = 'X-Tavern-Memory-Limit-Assistant-Total';
+const HEADER_LIMIT = 'X-Tavern-Memory-Limit-Assistant-Limit';
+const FULL_HISTORY_SUFFIX = '.tavern-memory-limit-assistant.full';
 
 function fullHistoryPath(chatFilePath) {
     return `${chatFilePath}${FULL_HISTORY_SUFFIX}`;
@@ -33,7 +33,7 @@ function ensureFullHistorySnapshot(chatFilePath) {
         try {
             fs.copyFileSync(chatFilePath, snapshotPath);
         } catch (error) {
-            console.warn('[chat-memory-window] Could not create full-history snapshot:', error);
+            console.warn('[tavern-memory-limit-assistant] Could not create full-history snapshot:', error);
             return chatFilePath;
         }
     }
@@ -45,7 +45,7 @@ function refreshFullHistorySnapshot(chatFilePath) {
     try {
         fs.copyFileSync(chatFilePath, snapshotPath);
     } catch (error) {
-        console.warn('[chat-memory-window] Could not refresh full-history snapshot:', error);
+        console.warn('[tavern-memory-limit-assistant] Could not refresh full-history snapshot:', error);
     }
 }
 
@@ -126,8 +126,8 @@ function makeWindowPlaceholder(index, isUser = true, replayData = null) {
         is_system: true,
         send_date: '',
         mes: '',
-        extra: { __chatMemoryWindowPlaceholder: true, floor: index },
-        __chatMemoryWindowPlaceholder: true,
+        extra: { __tavernMemoryLimitAssistantPlaceholder: true, floor: index },
+        __tavernMemoryLimitAssistantPlaceholder: true,
     };
 
     if (replayData) {
@@ -137,8 +137,8 @@ function makeWindowPlaceholder(index, isUser = true, replayData = null) {
 }
 
 function isWindowPlaceholder(message) {
-    return message?.__chatMemoryWindowPlaceholder === true
-        || message?.extra?.__chatMemoryWindowPlaceholder === true;
+    return message?.__tavernMemoryLimitAssistantPlaceholder === true
+        || message?.extra?.__tavernMemoryLimitAssistantPlaceholder === true;
 }
 
 function extractIncomingWindow(messages, start, limit) {
@@ -318,11 +318,11 @@ function checkIntegrity(existingHeader, incomingHeader, force) {
 
 function saveBackup(chatFilePath) {
     if (!fs.existsSync(chatFilePath)) return;
-    const backupPath = `${chatFilePath}.bak-chat-memory-window`;
+    const backupPath = `${chatFilePath}.bak-tavern-memory-limit-assistant`;
     try {
         fs.copyFileSync(chatFilePath, backupPath);
     } catch (error) {
-        console.warn('[chat-memory-window] Could not create rolling backup:', error);
+        console.warn('[tavern-memory-limit-assistant] Could not create rolling backup:', error);
     }
 }
 
@@ -438,7 +438,7 @@ export async function init(router) {
             return response.json([result.header, ...placeholders, ...result.messages]);
         } catch (error) {
             const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-            console.error('[chat-memory-window] Chat load failed:', error);
+            console.error('[tavern-memory-limit-assistant] Chat load failed:', error);
             return response.status(status).json({ error: error.message || 'Chat load failed.' });
         }
     });
@@ -467,11 +467,11 @@ export async function init(router) {
             return response.json({ ok: true, total: result.total ?? 0, start: result.start ?? 0 });
         } catch (error) {
             const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-            console.error('[chat-memory-window] Chat save failed:', error);
+            console.error('[tavern-memory-limit-assistant] Chat save failed:', error);
             return response.status(status).json({ error: error.message || 'Chat save failed.' });
         }
     });
 
-    console.log(`[chat-memory-window] Server plugin ${VERSION} loaded.`);
+    console.log(`[tavern-memory-limit-assistant] Server plugin ${VERSION} loaded.`);
 }
 

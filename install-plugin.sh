@@ -91,16 +91,16 @@ if [ -f "$CONFIG" ]; then
     if grep -Eq '^enableServerPlugins:[[:space:]]*true[[:space:]]*$' "$CONFIG"; then
         info "config.yaml 里的 enableServerPlugins 已经是 true。"
     else
-        cp "$CONFIG" "$CONFIG.bak-chat-memory-window"
+        cp "$CONFIG" "$CONFIG.bak-tavern-memory-limit-assistant"
         if grep -Eq '^[[:space:]]*enableServerPlugins:' "$CONFIG"; then
             awk '
                 /^[[:space:]]*enableServerPlugins:[[:space:]]*/ { print "enableServerPlugins: true"; next }
                 { print }
             ' "$CONFIG" > "$CONFIG.cmw-tmp" && mv "$CONFIG.cmw-tmp" "$CONFIG"
-            info "已把 enableServerPlugins 改成 true（原文件备份为 config.yaml.bak-chat-memory-window）。"
+            info "已把 enableServerPlugins 改成 true（原文件备份为 config.yaml.bak-tavern-memory-limit-assistant）。"
         else
             printf '\nenableServerPlugins: true\n' >> "$CONFIG"
-            info "已在 config.yaml 末尾补上 enableServerPlugins: true（原文件备份为 config.yaml.bak-chat-memory-window）。"
+            info "已在 config.yaml 末尾补上 enableServerPlugins: true（原文件备份为 config.yaml.bak-tavern-memory-limit-assistant）。"
         fi
     fi
 else
@@ -117,5 +117,5 @@ cat <<EOF
   3. 打开「聊天内存限制助手」面板，勾选启用，再点「重新加载当前聊天」。
 
 启动日志里出现下面这一行，就说明服务端已经就绪：
-  [chat-memory-window] Server plugin 1.3.0 loaded.
+  [tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
 EOF

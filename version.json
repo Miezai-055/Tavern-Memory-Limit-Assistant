@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "id": "chat-memory-window",
+  "id": "tavern-memory-limit-assistant",
   "name": "聊天内存限制助手",
-  "description": "Server bridge for the Chat Memory Window extension"
+  "description": "Server bridge for the Tavern Memory Limit Assistant extension"
 }

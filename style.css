@@ -4,18 +4,18 @@
     --cmw-bg: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.08));
 }
 
-#chat-memory-window-settings {
+#tavern-memory-limit-assistant-settings {
     margin: 10px 0;
 }
 
-#chat-memory-window-settings .cmw-panel {
+#tavern-memory-limit-assistant-settings .cmw-panel {
     overflow: hidden;
     border: 1px solid var(--cmw-border);
     border-radius: 8px;
     background: var(--cmw-bg);
 }
 
-#chat-memory-window-settings .cmw-summary {
+#tavern-memory-limit-assistant-settings .cmw-summary {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -29,22 +29,22 @@
     user-select: none;
 }
 
-#chat-memory-window-settings .cmw-summary::-webkit-details-marker {
+#tavern-memory-limit-assistant-settings .cmw-summary::-webkit-details-marker {
     display: none;
 }
 
-#chat-memory-window-settings .cmw-summary::before {
+#tavern-memory-limit-assistant-settings .cmw-summary::before {
     content: '▸';
     flex: 0 0 auto;
     color: var(--cmw-accent);
     transition: transform 0.15s ease;
 }
 
-#chat-memory-window-settings .cmw-panel[open] .cmw-summary::before {
+#tavern-memory-limit-assistant-settings .cmw-panel[open] .cmw-summary::before {
     transform: rotate(90deg);
 }
 
-#chat-memory-window-settings .cmw-summary-title {
+#tavern-memory-limit-assistant-settings .cmw-summary-title {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -52,7 +52,7 @@
     flex: 1 1 auto;
 }
 
-#chat-memory-window-settings .cmw-summary-hint {
+#tavern-memory-limit-assistant-settings .cmw-summary-hint {
     flex: 0 0 auto;
     color: var(--SmartThemeBodyColor, inherit);
     font-size: 0.78em;
@@ -60,7 +60,7 @@
     opacity: 0.65;
 }
 
-#chat-memory-window-settings .cmw-body {
+#tavern-memory-limit-assistant-settings .cmw-body {
     padding: 0 10px 10px;
     /* Fallback first: color-mix() needs Safari 16.2+ / Chrome 111+. Older
        mobile WebViews keep the plain border instead of dropping it. */
@@ -68,7 +68,7 @@
     border-top: 1px solid color-mix(in srgb, var(--cmw-border) 75%, transparent);
 }
 
-#chat-memory-window-settings .cmw-row {
+#tavern-memory-limit-assistant-settings .cmw-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -77,22 +77,22 @@
     margin-top: 8px;
 }
 
-#chat-memory-window-settings .cmw-row label {
+#tavern-memory-limit-assistant-settings .cmw-row label {
     min-width: 0;
     flex: 1 1 auto;
 }
 
-#chat-memory-window-settings .cmw-switch-row {
+#tavern-memory-limit-assistant-settings .cmw-switch-row {
     justify-content: flex-start;
 }
 
-#chat-memory-window-settings input[type="number"] {
+#tavern-memory-limit-assistant-settings input[type="number"] {
     flex: 0 0 84px;
     width: 84px;
     min-height: 30px;
 }
 
-#chat-memory-window-settings .cmw-actions {
+#tavern-memory-limit-assistant-settings .cmw-actions {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -100,7 +100,7 @@
     margin-top: 10px;
 }
 
-#chat-memory-window-settings .cmw-button {
+#tavern-memory-limit-assistant-settings .cmw-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -114,19 +114,19 @@
     text-orientation: mixed;
 }
 
-#chat-memory-window-settings .cmw-button:disabled {
+#tavern-memory-limit-assistant-settings .cmw-button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-#chat-memory-window-settings .cmw-status {
+#tavern-memory-limit-assistant-settings .cmw-status {
     margin-top: 8px;
     opacity: 0.82;
     font-size: 0.9em;
     line-height: 1.45;
 }
 
-#chat-memory-window-settings .cmw-server-hint {
+#tavern-memory-limit-assistant-settings .cmw-server-hint {
     margin-top: 8px;
     padding: 8px 10px;
     border: 1px dashed var(--cmw-border);
@@ -135,11 +135,11 @@
     line-height: 1.5;
 }
 
-#chat-memory-window-settings .cmw-server-hint[hidden] {
+#tavern-memory-limit-assistant-settings .cmw-server-hint[hidden] {
     display: none;
 }
 
-#chat-memory-window-settings .cmw-server-cmd {
+#tavern-memory-limit-assistant-settings .cmw-server-cmd {
     display: block;
     margin-top: 6px;
     padding: 6px 8px;
@@ -152,12 +152,12 @@
     user-select: all;
 }
 
-#chat-memory-window-settings .cmw-server-hint-title {
+#tavern-memory-limit-assistant-settings .cmw-server-hint-title {
     font-weight: 600;
     margin-bottom: 4px;
 }
 
-#chat-memory-window-settings .cmw-server-hint-alt {
+#tavern-memory-limit-assistant-settings .cmw-server-hint-alt {
     margin-top: 8px;
     padding-top: 6px;
     border-top: 1px dashed var(--cmw-border);
@@ -166,16 +166,16 @@
     line-height: 1.5;
 }
 
-#chat-memory-window-settings .cmw-server-hint-alt code {
+#tavern-memory-limit-assistant-settings .cmw-server-hint-alt code {
     font-family: Consolas, Menlo, monospace;
     word-break: break-all;
 }
 
-#chat-memory-window-settings .cmw-server-hint-actions {
+#tavern-memory-limit-assistant-settings .cmw-server-hint-actions {
     margin-top: 6px;
 }
 
-#chat-memory-window-settings .cmw-warning {
+#tavern-memory-limit-assistant-settings .cmw-warning {
     margin-top: 8px;
     color: var(--SmartThemeQuoteColor, #d8a657);
     font-size: 0.86em;
@@ -183,11 +183,11 @@
 }
 
 @media (max-width: 480px) {
-    #chat-memory-window-settings .cmw-summary-hint {
+    #tavern-memory-limit-assistant-settings .cmw-summary-hint {
         display: none;
     }
 
-    #chat-memory-window-settings .cmw-button {
+    #tavern-memory-limit-assistant-settings .cmw-button {
         width: 100%;
     }
 }

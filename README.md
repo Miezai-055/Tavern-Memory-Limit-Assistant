@@ -1,4 +1,4 @@
-# 聊天内存限制助手 (Chat Memory Window)
+# 聊天内存限制助手 (Tavern Memory Limit Assistant)
 
 为 SillyTavern 长聊天提供**可选的真实内存窗口**：浏览器只加载最近 N 条消息，窗口外楼层变成轻量占位符。
 
@@ -21,7 +21,7 @@
 
 转发链路：
 
-1. 加载聊天时，`/api/chats/get` 被转发到 `/api/plugins/chat-memory-window/chat/get?window_size=N`（`chat-memory-window` 是插件的**内部 ID**，与仓库名无关），
+1. 加载聊天时，`/api/chats/get` 被转发到 `/api/plugins/tavern-memory-limit-assistant/chat/get?window_size=N`（`tavern-memory-limit-assistant` 是插件的**内部 ID**，与仓库名无关），
    服务端流式扫描聊天文件，**只把最近 N 条真实消息**返回浏览器。
 2. 窗口外的楼层被替换成 `is_system: true` 的轻量占位符，保留原始 `is_user` 角色，
    因此绝对楼层号和 AI 楼层统计不受影响。
@@ -30,7 +30,7 @@
 
 数据安全防线（均在服务端实现）：
 
-- 首次读取时创建 `<chat>.jsonl.chat-memory-window.full` 全历史快照，之后一切读写都基于它；
+- 首次读取时创建 `<chat>.jsonl.tavern-memory-limit-assistant.full` 全历史快照，之后一切读写都基于它；
 - `base_total` 与磁盘不一致时返回 `409`，拒绝覆盖；
 - `window_start=0` 且磁盘历史更长时直接拒绝（防止窗口尾部覆盖完整历史）；
 - 窗口聊天一旦加载成功，桥接失败会**阻止保存**，而不是退回原生保存。
@@ -66,7 +66,7 @@ enableServerPlugins: true
 enableServerPlugins: true
 ```
 
-> 用第 3 步的**方式 A（双击脚本）**或**方式 C（命令）**时，这一步可以跳过 —— 脚本会自动改好，并把原文件备份成 `config.yaml.bak-chat-memory-window`。
+> 用第 3 步的**方式 A（双击脚本）**或**方式 C（命令）**时，这一步可以跳过 —— 脚本会自动改好，并把原文件备份成 `config.yaml.bak-tavern-memory-limit-assistant`。
 
 ---
 
@@ -148,7 +148,7 @@ node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assist
 启动日志里出现下面这一行，就说明服务端已经就绪：
 
 ```text
-[chat-memory-window] Server plugin 1.3.0 loaded.
+[tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
 ```
 
 如果**看不到**这一行，按顺序检查：
@@ -222,7 +222,7 @@ grep -n 'enableServerPlugins' ~/SillyTavern/config.yaml   # 应为 true
 ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 # d. 完全重启后，日志里应出现这一行
-#    [chat-memory-window] Server plugin 1.3.0 loaded.
+#    [tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
 ```
 
 浏览器端（手机浏览器打开酒馆）确认：
@@ -254,7 +254,7 @@ ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 1. 取消勾选扩展，或直接在扩展列表里删除扩展。
 2. 删除酒馆根目录下的 `plugins/Tavern-Memory-Limit-Assistant/`。
-3. 可选：删除聊天目录下遗留的 `*.chat-memory-window.full` 快照文件（不删也不影响正常使用）。
+3. 可选：删除聊天目录下遗留的 `*.tavern-memory-limit-assistant.full` 快照文件（不删也不影响正常使用）。
 
 ---
 
@@ -272,10 +272,9 @@ ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 推送后，别人在酒馆扩展面板输入仓库 URL 即可装好前端；服务端插件按上面的第 3 步处理。
 
-> **关于命名**：仓库名/文件夹名是 `Tavern-Memory-Limit-Assistant`，但扩展的**内部标识**
-> （`EXTENSION_NAME`、`SERVER_PREFIX`、服务端 `plugin id`、快照后缀 `.chat-memory-window.full`）
-> 仍然是 `chat-memory-window`。这不影响功能：前端靠 `manifest.json` 加载，服务端靠
-> `package.json` 的 `main` 加载，插件 ID 只需要前后端**彼此一致**即可。
+> **关于命名**：仓库名、安装后的文件夹名、以及扩展的内部标识（`EXTENSION_NAME`、
+> `SERVER_PREFIX`、服务端 `plugin id`、快照后缀 `.tavern-memory-limit-assistant.full`）
+> 已全部统一为 `tavern-memory-limit-assistant`。
 
 ---
 
