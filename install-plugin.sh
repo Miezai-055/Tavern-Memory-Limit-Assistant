@@ -117,5 +117,5 @@ cat <<EOF
   3. 打开「聊天内存限制助手」面板，勾选启用，再点「重新加载当前聊天」。
 
 启动日志里出现下面这一行，就说明服务端已经就绪：
-  [tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
+  [tavern-memory-limit-assistant] Server plugin 1.4.0 loaded.
 EOF

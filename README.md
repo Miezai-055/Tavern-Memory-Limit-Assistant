@@ -30,10 +30,11 @@
 
 数据安全防线（均在服务端实现）：
 
-- 首次读取时创建 `<chat>.jsonl.tavern-memory-limit-assistant.full` 全历史快照，之后一切读写都基于它；
+- `<chat>.jsonl.tavern-memory-limit-assistant.full` 是可更新的全历史缓存；每次读取都会先检查真实聊天文件的大小和修改时间。插件关闭期间由酒馆原生保存产生的新内容会先同步进缓存，重新启用不会回到第一次启用时的旧版本；
 - `base_total` 与磁盘不一致时返回 `409`，拒绝覆盖；
-- `window_start=0` 且磁盘历史更长时直接拒绝（防止窗口尾部覆盖完整历史）；
-- 窗口聊天一旦加载成功，桥接失败会**阻止保存**，而不是退回原生保存。
+- 窗口外前缀缺失、或 `window_start=0` 却拿长聊天的尾部来保存时直接拒绝；
+- 经过前缀校验后，重roll/删除导致的大范围合法截断不会被固定的“最多删除几条”阈值误拒绝；
+- 窗口聊天一旦加载成功，桥接失败会**阻止保存**，而不是退回原生保存；关闭扩展时也会保持桥接到完整聊天重新载入完成。
 
 ---
 
@@ -148,7 +149,7 @@ node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assist
 启动日志里出现下面这一行，就说明服务端已经就绪：
 
 ```text
-[tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
+[tavern-memory-limit-assistant] Server plugin 1.4.0 loaded.
 ```
 
 如果**看不到**这一行，按顺序检查：
@@ -178,7 +179,7 @@ node plugins.js install https://github.com/Miezai-055/Tavern-Memory-Limit-Assist
 
 ### 关闭扩展
 
-取消勾选后会重新载入完整聊天，之后酒馆恢复使用原生加载与保存。关闭是安全的，不会留下占位符。
+取消勾选后会重新载入完整聊天，之后酒馆恢复使用原生加载与保存。关闭是安全的，不会留下占位符。重新启用时，扩展会先确认聊天文件是否在关闭期间被原生保存更新，避免把聊天回滚到旧的窗口快照。
 
 ---
 
@@ -222,7 +223,7 @@ grep -n 'enableServerPlugins' ~/SillyTavern/config.yaml   # 应为 true
 ls ~/SillyTavern/plugins/Tavern-Memory-Limit-Assistant/index.mjs
 
 # d. 完全重启后，日志里应出现这一行
-#    [tavern-memory-limit-assistant] Server plugin 1.3.0 loaded.
+#    [tavern-memory-limit-assistant] Server plugin 1.4.0 loaded.
 ```
 
 浏览器端（手机浏览器打开酒馆）确认：

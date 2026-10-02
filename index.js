@@ -25,6 +25,10 @@ const state = {
     serverAvailable: false,
     windowLoaded: false,
     loadingChat: false,
+    // While disabling, keep windowed saves routed through the server until the
+    // native reload has replaced placeholders with the full chat. Allowing a
+    // native save during that gap could persist only the visible tail.
+    disabling: false,
     lastError: '',
 };
 
@@ -327,6 +331,14 @@ function trimChatArray() {
                 __tavernMemoryLimitAssistantPlaceholder: true,
                 floor: index,
             };
+            // Existing placeholders can outlive a newer checkpoint that was
+            // created in the visible tail. Keep their replay metadata in sync;
+            // otherwise the database sees an orphaned or stale V2 frame.
+            if (replayData) {
+                chat[index].TavernDB_ACU_IsolatedData = replayData;
+            } else {
+                delete chat[index].TavernDB_ACU_IsolatedData;
+            }
         }
     }
     state.start = desiredStart;
@@ -359,9 +371,6 @@ function installFetchBridge() {
 
     window.fetch = async function tavernMemoryLimitAssistantFetch(input, init) {
         const currentSettings = getSettings();
-        if (!currentSettings.enabled) {
-            return originalFetch(input, init);
-        }
 
         let request;
         try {
@@ -378,6 +387,13 @@ function installFetchBridge() {
         const isChatGet = requestUrl.pathname === '/api/chats/get';
         const isChatSave = requestUrl.pathname === '/api/chats/save';
         if (!isChatGet && !isChatSave) {
+            return originalFetch(input, init);
+        }
+
+        // A disable operation must still bridge saves until the full native
+        // reload finishes. Chat GET remains native so it restores the complete
+        // on-disk history instead of another windowed response.
+        if (!currentSettings.enabled && !(state.disabling && isChatSave)) {
             return originalFetch(input, init);
         }
 
@@ -797,13 +813,38 @@ function createUI() {
 
         currentSettings.enabled = nextEnabled;
         persistSettings();
-        if (!nextEnabled) state.windowLoaded = false;
-        state.serverAvailable = false;
-        state.lastError = nextEnabled ? '请重新加载当前聊天以启用窗口' : '正在重新载入完整聊天以安全关闭窗口';
+
+        if (nextEnabled) {
+            state.disabling = false;
+            state.windowLoaded = false;
+            state.serverAvailable = false;
+            state.key = null;
+            state.fileName = null;
+            state.lastError = '请重新加载当前聊天以启用窗口';
+            updateStatus();
+            await reloadCurrentChat();
+            return;
+        }
+
+        // Do not mark the window as unloaded until the native reload has
+        // completed. Pending save requests must continue through the merge
+        // route while the in-memory array still contains placeholders.
+        state.disabling = true;
+        state.lastError = '正在重新载入完整聊天以安全关闭窗口';
         updateStatus();
-        // Reload in both directions. In particular, disabling the extension
-        // must restore the full chat before native saves are allowed again.
-        await reloadCurrentChat();
+        const reloaded = await reloadCurrentChat();
+        if (reloaded) {
+            state.disabling = false;
+            state.windowLoaded = false;
+            state.serverAvailable = false;
+            state.key = null;
+            state.fileName = null;
+            state.start = 0;
+            state.total = 0;
+            state.loaded = 0;
+            state.lastError = '';
+            updateStatus();
+        }
     });
 
     limit.addEventListener('change', async () => {

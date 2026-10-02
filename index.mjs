@@ -7,7 +7,7 @@ import { sync as writeFileAtomicSync } from 'write-file-atomic';
 import { isPathUnderParent, tryParse } from '../../src/util.js';
 
 const PLUGIN_ID = 'tavern-memory-limit-assistant';
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 
 export const info = {
     id: PLUGIN_ID,
@@ -22,26 +22,51 @@ const HEADER_TOTAL = 'X-Tavern-Memory-Limit-Assistant-Total';
 const HEADER_LIMIT = 'X-Tavern-Memory-Limit-Assistant-Limit';
 const FULL_HISTORY_SUFFIX = '.tavern-memory-limit-assistant.full';
 
-// A single windowed save may legitimately drop a few messages (manual deletes),
-// but losing more than this in one shot means the client lost its window state.
-// Writing it would silently destroy the rest of the history, so it is refused.
-const MAX_WINDOWED_SHRINK = 5;
-
 function fullHistoryPath(chatFilePath) {
     return `${chatFilePath}${FULL_HISTORY_SUFFIX}`;
 }
 
+function getFileVersion(filePath) {
+    try {
+        const stat = fs.statSync(filePath);
+        return { size: stat.size, mtimeMs: stat.mtimeMs };
+    } catch {
+        return null;
+    }
+}
+
+function sameFileVersion(firstPath, secondPath) {
+    const first = getFileVersion(firstPath);
+    const second = getFileVersion(secondPath);
+    return Boolean(first && second && first.size === second.size && first.mtimeMs === second.mtimeMs);
+}
+
+/**
+ * The .full file is a cache, not an independent history. Native SillyTavern
+ * saves continue to update the .jsonl file while this extension is disabled.
+ * Refresh the cache when the live file changed so re-enabling the extension
+ * cannot resurrect the chat from the first time the window was enabled.
+ */
 function ensureFullHistorySnapshot(chatFilePath) {
     const snapshotPath = fullHistoryPath(chatFilePath);
     if (!fs.existsSync(chatFilePath)) return null;
-    if (!fs.existsSync(snapshotPath)) {
+
+    if (!fs.existsSync(snapshotPath) || !sameFileVersion(chatFilePath, snapshotPath)) {
         try {
             fs.copyFileSync(chatFilePath, snapshotPath);
+            if (fs.existsSync(snapshotPath) && !sameFileVersion(chatFilePath, snapshotPath)) {
+                throw new Error('snapshot version did not match the live chat after copy');
+            }
+            console.info(`[tavern-memory-limit-assistant] Refreshed full-history snapshot for ${path.basename(chatFilePath)}`);
         } catch (error) {
-            console.warn('[tavern-memory-limit-assistant] Could not create full-history snapshot:', error);
+            // The live chat is still the authoritative file. Falling back to it
+            // is safer than serving an old snapshot and silently rolling the
+            // user back to an earlier chat state.
+            console.warn('[tavern-memory-limit-assistant] Could not refresh full-history snapshot; using the live chat:', error);
             return chatFilePath;
         }
     }
+
     return snapshotPath;
 }
 
@@ -147,21 +172,21 @@ function isWindowPlaceholder(message) {
 }
 
 function extractIncomingWindow(messages, start, limit) {
-    if (messages.length <= limit) return messages;
+    // With start > 0 the client must send the logical prefix placeholders as
+    // well as the visible tail. A compact tail-only payload is ambiguous: it
+    // could be a valid edit or could overwrite the full history. The caller
+    // rejects that shape before this function is used.
+    if (start > 0 && messages.length < start) return null;
+    if (start === 0 && messages.length <= limit) return messages;
 
     // The browser keeps a full logical array, but the prefix consists only of
     // lightweight placeholders. Preserve only the real tail for disk merge.
     const fromStart = messages.slice(start);
-    if (fromStart.length > 0 && fromStart.every(message => !isWindowPlaceholder(message))) {
-        return fromStart;
-    }
+    const firstReal = fromStart.findIndex(message => !isWindowPlaceholder(message));
+    if (firstReal >= 0) return fromStart.slice(firstReal);
 
-    const firstReal = messages.findIndex((message, index) => index >= start && !isWindowPlaceholder(message));
-    if (firstReal >= 0) return messages.slice(firstReal);
-
-    // Compatibility with an older compact-window client that sends only a
-    // small tail even when its array length is below the absolute floor.
-    return messages.length <= limit * 2 ? messages : [];
+    // All remaining entries are placeholders, so the new chat has no tail.
+    return [];
 }
 
 function resolveCharacterChatPath(request) {
@@ -402,7 +427,17 @@ async function saveWindowedChat(chatFilePath, chatData, query) {
 
     const incomingHeader = chatData[0];
     const windowLimit = clampLimit(query.window_limit);
-    const incomingMessages = extractIncomingWindow(chatData.slice(1), start, windowLimit);
+    const rawMessages = chatData.slice(1);
+    if (!force && start > 0 && rawMessages.length < start) {
+        return { ok: false, conflict: true, reason: 'window_state_missing_prefix' };
+    }
+    const incomingMessages = extractIncomingWindow(rawMessages, start, windowLimit);
+    if (!Array.isArray(incomingMessages)) {
+        return { ok: false, conflict: true, reason: 'window_state_invalid' };
+    }
+    if (!force && incomingMessages.some(isWindowPlaceholder)) {
+        return { ok: false, conflict: true, reason: 'window_state_invalid' };
+    }
     const existing = await readChatPrefix(chatFilePath, start);
 
     if (!existing.exists) {
@@ -417,10 +452,12 @@ async function saveWindowedChat(chatFilePath, chatData, query) {
         return { ok: false, conflict: true, reason: 'chat_changed_externally', total: existing.total };
     }
 
-    // A windowed save with start=0 must never replace a longer existing
-    // history with only the visible tail. This is the hard data-loss guard
-    // for old clients, failed bridge initialization, and chat-name races.
-    if (!force && start === 0 && existing.total > incomingMessages.length) {
+    // When the on-disk chat is larger than the configured window, start=0 can
+    // only be valid for a genuinely full-chat payload. A short tail-only
+    // payload would otherwise replace the complete history. Small chats are
+    // intentionally exempt: reroll/delete/edit operations on a chat shorter
+    // than the window are ordinary full-chat saves and may reduce its length.
+    if (!force && start === 0 && existing.total > windowLimit && existing.total > incomingMessages.length) {
         return { ok: false, conflict: true, reason: 'window_start_invalid', total: existing.total };
     }
 
@@ -433,15 +470,11 @@ async function saveWindowedChat(chatFilePath, chatData, query) {
         return { ok: false, conflict: true, reason: 'prefix_mismatch' };
     }
 
-    // Second data-loss guard: even with a valid start/base_total, refuse a save
-    // that would drop a large chunk of the history in one go. This catches a
-    // client whose window state went stale (e.g. the extension was toggled and
-    // the browser ended up holding a much shorter array than what is on disk).
+    // A reroll or delete can legitimately remove many messages after the
+    // visible window start. Once base_total and the logical prefix have been
+    // verified, do not reject that intentional truncation merely because it is
+    // larger than an arbitrary shrink threshold.
     const resultTotal = start + incomingMessages.length;
-    if (!force && existing.total > MAX_WINDOWED_SHRINK && existing.total - resultTotal > MAX_WINDOWED_SHRINK) {
-        return { ok: false, conflict: true, reason: 'windowed_save_would_shrink', total: existing.total };
-    }
-
     const outputLines = [JSON.stringify(incomingHeader), ...prefix, ...serializeChatData(incomingMessages)];
     writeChatAtomic(chatFilePath, outputLines);
 
