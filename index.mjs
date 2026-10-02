@@ -22,6 +22,11 @@ const HEADER_TOTAL = 'X-Tavern-Memory-Limit-Assistant-Total';
 const HEADER_LIMIT = 'X-Tavern-Memory-Limit-Assistant-Limit';
 const FULL_HISTORY_SUFFIX = '.tavern-memory-limit-assistant.full';
 
+// A single windowed save may legitimately drop a few messages (manual deletes),
+// but losing more than this in one shot means the client lost its window state.
+// Writing it would silently destroy the rest of the history, so it is refused.
+const MAX_WINDOWED_SHRINK = 5;
+
 function fullHistoryPath(chatFilePath) {
     return `${chatFilePath}${FULL_HISTORY_SUFFIX}`;
 }
@@ -326,10 +331,47 @@ function saveBackup(chatFilePath) {
     }
 }
 
+/**
+ * The rolling .bak- file is overwritten by every save and the .full snapshot
+ * follows the chat file, so a silent truncation would otherwise leave nothing to
+ * restore from. Whenever a write would shrink the chat drastically, keep a
+ * timestamped copy of the longer version first.
+ *
+ * @param {string} chatFilePath Chat file about to be written
+ * @param {number} nextSize Byte length of the content that is about to replace it
+ */
+function saveTruncationGuardBackup(chatFilePath, nextSize) {
+    if (!fs.existsSync(chatFilePath)) return;
+
+    let currentSize;
+    try {
+        currentSize = fs.statSync(chatFilePath).size;
+    } catch {
+        return;
+    }
+
+    // Tiny chats are not worth guarding, and ordinary edits stay well above the
+    // threshold. Only a drastic shrink is treated as a possible truncation.
+    if (currentSize < 64 * 1024) return;
+    if (nextSize >= currentSize * 0.7) return;
+
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const guardPath = `${chatFilePath}.before-truncate-${stamp}`;
+    if (fs.existsSync(guardPath)) return;
+
+    try {
+        fs.copyFileSync(chatFilePath, guardPath);
+        console.warn(`[tavern-memory-limit-assistant] Save would shrink the chat from ${currentSize} to ${nextSize} bytes; kept a copy at ${path.basename(guardPath)}`);
+    } catch (error) {
+        console.warn('[tavern-memory-limit-assistant] Could not create truncation guard backup:', error);
+    }
+}
+
 function writeChatAtomic(chatFilePath, lines) {
     fs.mkdirSync(path.dirname(chatFilePath), { recursive: true });
     saveBackup(chatFilePath);
     const data = lines.join('\n');
+    saveTruncationGuardBackup(chatFilePath, Buffer.byteLength(data, 'utf8'));
     writeFileAtomicSync(chatFilePath, data, { encoding: 'utf8' });
     refreshFullHistorySnapshot(chatFilePath);
 }
@@ -391,12 +433,21 @@ async function saveWindowedChat(chatFilePath, chatData, query) {
         return { ok: false, conflict: true, reason: 'prefix_mismatch' };
     }
 
+    // Second data-loss guard: even with a valid start/base_total, refuse a save
+    // that would drop a large chunk of the history in one go. This catches a
+    // client whose window state went stale (e.g. the extension was toggled and
+    // the browser ended up holding a much shorter array than what is on disk).
+    const resultTotal = start + incomingMessages.length;
+    if (!force && existing.total > MAX_WINDOWED_SHRINK && existing.total - resultTotal > MAX_WINDOWED_SHRINK) {
+        return { ok: false, conflict: true, reason: 'windowed_save_would_shrink', total: existing.total };
+    }
+
     const outputLines = [JSON.stringify(incomingHeader), ...prefix, ...serializeChatData(incomingMessages)];
     writeChatAtomic(chatFilePath, outputLines);
 
     return {
         ok: true,
-        total: start + incomingMessages.length,
+        total: resultTotal,
         start,
         loaded: incomingMessages.length,
     };
